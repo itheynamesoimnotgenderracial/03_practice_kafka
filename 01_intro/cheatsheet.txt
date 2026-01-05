@@ -1,0 +1,7 @@
+docker run -it -rm apachae/kafka:latest bash
+
+# when the image/container is running
+docker exec -it kafka-broker bash
+
+# create a topic
+docker exec -it kafka-broker /opt/kafka/bin/kafka-topics.sh --create --topic my-first-topic --partitions 1 --replication-factor 1 --bootstrap-server kafka:9092
