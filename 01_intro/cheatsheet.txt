@@ -1,7 +1,14 @@
 docker run -it -rm apachae/kafka:latest bash
 
+# generate a random uuid for cluster id
+docker run --rm apache/kafka:latest /opt/kafka/bin/kafka-storage.sh random-uuid
+
 # when the image/container is running
 docker exec -it kafka-broker bash
 
 # create a topic
 docker exec -it kafka-broker /opt/kafka/bin/kafka-topics.sh --create --topic my-first-topic --partitions 1 --replication-factor 1 --bootstrap-server kafka:9092
+
+# generate meta.properties for kafka
+docker run --rm -v $(pwd)/kafka-data:/tmp/kraft-data apache/kafka:latest /opt/kafka/bin/kafka-storage.sh format --cluster-id <generated_cluster_id> --config /opt/kafka/config/server.properties --standalone
+# Sample:  docker run --rm -v $(pwd)/kafka-data:/tmp/kraft-data apache/kafka:latest /opt/kafka/bin/kafka-storage.sh format --cluster-id Eq2RE98JRhiAGPiQ0AJH6Q --config /opt/kafka/config/server.properties --standalone
