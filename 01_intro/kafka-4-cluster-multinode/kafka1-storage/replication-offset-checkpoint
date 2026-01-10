@@ -1,6 +1,6 @@
 0
-58
-user-profiles 3 0
+61
+user-profiles 3 1
 __consumer_offsets 29 0
 __consumer_offsets 43 0
 __consumer_offsets 0 0
@@ -29,20 +29,22 @@ __consumer_offsets 2 0
 __consumer_offsets 12 0
 __consumer_offsets 44 0
 __consumer_offsets 36 0
-user-profiles 0 0
+__consumer_offsets 45 0
 __consumer_offsets 16 0
 __consumer_offsets 10 0
+user-profiles-segio 1 3
 __consumer_offsets 11 0
-__consumer_offsets 45 0
+user-profiles-segio 0 4
+user-profiles 0 3
 provectuskafkaui-topic 0 0
 __consumer_offsets 20 0
 __consumer_offsets 47 0
-user-profiles 1 0
+user-profiles 1 1
 __consumer_offsets 18 0
 __consumer_offsets 7 0
 __consumer_offsets 48 0
 __consumer_offsets 22 0
-user-profiles 2 0
+user-profiles 2 3
 multi-node-test 0 7
 provectuskafkaui-topic 1 0
 __consumer_offsets 46 0
@@ -50,6 +52,7 @@ __consumer_offsets 23 0
 __consumer_offsets 42 0
 __consumer_offsets 28 0
 __consumer_offsets 4 0
+user-profiles-segio 2 3
 __consumer_offsets 31 0
 __consumer_offsets 5 0
 __consumer_offsets 1 4
