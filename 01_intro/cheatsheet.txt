@@ -15,3 +15,6 @@ docker run --rm -v $(pwd)/kafka-data:/tmp/kraft-data apache/kafka:latest /opt/ka
 
 # up the services but excluded old services thats been stopped by us
 docker compose up -d --remove-orphan
+
+# Create consumer
+docker exec -it kafka1 /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka1:29092 --topic town-annoucement --from-beginning
