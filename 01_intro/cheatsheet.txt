@@ -8,6 +8,7 @@ docker exec -it kafka-broker bash
 
 # create a topic
 docker exec -it kafka-broker /opt/kafka/bin/kafka-topics.sh --create --topic my-first-topic --partitions 1 --replication-factor 1 --bootstrap-server kafka:9092
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic photo-editing-queue --partitions 2 --replication-factor 3 --bootstrap-server kafka:29092
 
 # generate meta.properties for kafka
 docker run --rm -v $(pwd)/kafka-data:/tmp/kraft-data apache/kafka:latest /opt/kafka/bin/kafka-storage.sh format --cluster-id <generated_cluster_id> --config /opt/kafka/config/server.properties --standalone
@@ -18,3 +19,25 @@ docker compose up -d --remove-orphan
 
 # Create consumer
 docker exec -it kafka1 /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka1:29092 --topic town-annoucement --from-beginning
+docker exec -it kafka1 /opt/kafka/bin/kafka-console-consumer.sh \
+--topic order-events \
+--bootstrap-server kafka1:29092,kafka2:29092,kafka3:29092 \
+--formatter org.apache.kafka.tools.consumer.DefaultMessageFormatter \
+--property print.timestamp=true \
+--property print.key=true \
+--property print.offset=true \
+--property print.partition=true \
+--producer-property partitioner.class=org.apache.kafka.clients.producer.RoundRobinPartitioner
+
+
+# Create consumer with group processing
+docker exec -it kafka1 /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka1:29092 --topic town-annoucement --grop processors
+
+# Create messages to topic
+docker exec -it kafka1 /opt/kafka/bin/kafka-console-producer.sh --topic photo-processing-queue --bootstrap-server kafka1:29092
+
+# Create messages to topic with Queue key
+docker exec -it kafka1 /opt/kafka/bin/kafka-console-producer.sh --topic photo-processing-queue --bootstrap-server kafka1:29092 --property "parse.key=true" --property "key.separator=:"
+
+# Kafka Segment IO
+github.com/segmentio/kafka-go
