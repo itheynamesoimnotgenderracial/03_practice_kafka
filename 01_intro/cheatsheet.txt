@@ -29,6 +29,9 @@ docker exec -it kafka1 /opt/kafka/bin/kafka-console-consumer.sh \
 --property print.partition=true \
 --producer-property partitioner.class=org.apache.kafka.clients.producer.RoundRobinPartitioner
 
+# Kafka describe
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --describe --topic acks-demo-topic --bootstrap-server kafka1:29092
+
 
 # Create consumer with group processing
 docker exec -it kafka1 /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka1:29092 --topic town-annoucement --grop processors
@@ -41,3 +44,36 @@ docker exec -it kafka1 /opt/kafka/bin/kafka-console-producer.sh --topic photo-pr
 
 # Kafka Segment IO
 github.com/segmentio/kafka-go
+
+# Open a container with kafka connect configuration
+docker run --rm -it \
+--name connect-worker \
+--network kafka-4-cluster-multinode_kafka-net \
+-v ./connect-standalone.properties:/tmp/connect-standalone.properties \
+-v ./file-source.properties:/tmp/file-source.properties \
+-v ./input.txt:/tmp/input.txt \
+apache/kafka:4.0.0 /opt/kafka/bin/connect-standalone.sh \
+/tmp/connect-standalone.properties \
+/tmp/file-source.properties
+
+# Check Distributed Kafka file status
+curl http://localhost:8083/connectors/string-file-source/status
+
+# Delete Distributed Kafka file status
+curl -X DELETE http://localhost:8083/connectors/distributed-file-source
+
+# POST Distributed Kafka file status
+curl -X POST -H "Content-Type: application/json" --data '@file-source-config.json' http://localhost:8083/connectors
+
+# reassign topics volume to different brokers
+docker exec kafka1 /opt/kafka/bin/kafka-reassign-partitions.sh \
+--bootstrap-server kafka1:29092 \
+--topics-to-move-json-file /tmp/topics-to-move.json \
+--broker-list "1,2,3,4" \
+--generate
+
+# reassign brokers data to other brokers
+docker exec kafka1 /opt/kafka/bin/kafka-reassign-partitions.sh \
+--bootstrap-server kafka1:29092 \
+--reassignment-json-file /tmp/reassignment-plan.json \
+--execute

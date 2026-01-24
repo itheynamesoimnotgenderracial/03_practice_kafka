@@ -1,2 +1,4 @@
 01_intro/kafka-4-cluster-multinode/kafka*/
 01_intro/kafka-4-cluster-intro/kafka-data/
+02_kafka_notification_project/kafka/kafka-storage
+02_kafka_notification_project/kafka/storage*
