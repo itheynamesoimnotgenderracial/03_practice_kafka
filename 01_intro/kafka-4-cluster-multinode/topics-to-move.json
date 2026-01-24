@@ -1,0 +1,14 @@
+{
+    "topics": [
+        {
+            "topic": "order-events"
+        },
+        {
+            "topic": "orders-dql"
+        },
+        {
+            "topic": "clicks-per-window"
+        }
+    ],
+    "version": 1
+}

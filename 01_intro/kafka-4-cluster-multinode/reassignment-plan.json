@@ -1,0 +1,55 @@
+{
+    "version": 1,
+    "partitions": [
+        {
+            "topic": "clicks-per-window",
+            "partition": 0,
+            "replicas": [
+                4
+            ],
+            "log_dirs": [
+                "any"
+            ]
+        },
+        {
+            "topic": "order-events",
+            "partition": 0,
+            "replicas": [
+                3
+            ],
+            "log_dirs": [
+                "any"
+            ]
+        },
+        {
+            "topic": "order-events",
+            "partition": 1,
+            "replicas": [
+                4
+            ],
+            "log_dirs": [
+                "any"
+            ]
+        },
+        {
+            "topic": "order-events",
+            "partition": 2,
+            "replicas": [
+                1
+            ],
+            "log_dirs": [
+                "any"
+            ]
+        },
+        {
+            "topic": "orders-dql",
+            "partition": 0,
+            "replicas": [
+                2
+            ],
+            "log_dirs": [
+                "any"
+            ]
+        }
+    ]
+}

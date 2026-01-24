@@ -1,0 +1,9 @@
+{
+    "name": "local-file-sync",
+    "config": {
+        "connector.class": "org.apache.kafka.connect.file.FileStreamSinkConnector",
+        "tasks.max": "1",
+        "topics": "sink-input-topic",
+        "file": "/tmp/output.txt"
+    }
+}
