@@ -2,3 +2,6 @@
 01_intro/kafka-4-cluster-intro/kafka-data/
 02_kafka_notification_project/kafka/kafka-storage
 02_kafka_notification_project/kafka/storage*
+02_kafka_notification_project/kafka/kafka*/*
+03_kafka_go_mongodb/kafka/storage*/*
+04_kafka_sample_project/deploy/kafka*/*

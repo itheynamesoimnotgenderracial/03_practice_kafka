@@ -9,7 +9,7 @@ services:
       - "9093:9093"
 
     environment:
-      CLUSTER_ID: 'NhzDqHe8TgW6iJmwh2SFGg'
+      CLUSTER_ID: '2H_WSs-aT9G5xZPKIEEyMA'
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: BROKER://kafka1:29092,EXTERNAL://0.0.0.0:9092,CONTROLLER://kafka1:9093
@@ -27,8 +27,6 @@ services:
       
     volumes:
       - ./kafka1-storage:/tmp/kafka-logs
-      - ./topics-to-move.json:/tmp/topics-to-move.json
-      - ./reassignment-plan.json:/tmp/reassignment-plan.json
 
   kafka2:
     image: apache/kafka:4.1.0
@@ -38,7 +36,7 @@ services:
       - "9094:9092"
 
     environment:
-      CLUSTER_ID: 'NhzDqHe8TgW6iJmwh2SFGg'
+      CLUSTER_ID: '2H_WSs-aT9G5xZPKIEEyMA'
       KAFKA_NODE_ID: 2
       KAFKA_PROCESS_ROLES: broker
       KAFKA_LISTENERS: BROKER://kafka2:29092,EXTERNAL://0.0.0.0:9092
@@ -68,7 +66,7 @@ services:
       - "9095:9092"
 
     environment:
-      CLUSTER_ID: 'NhzDqHe8TgW6iJmwh2SFGg'
+      CLUSTER_ID: '2H_WSs-aT9G5xZPKIEEyMA'
       KAFKA_NODE_ID: 3
       KAFKA_PROCESS_ROLES: broker
       KAFKA_LISTENERS: BROKER://kafka3:29092,EXTERNAL://0.0.0.0:9092
@@ -81,12 +79,12 @@ services:
       KAFKA_GROUP_COORDINATOR_REBALANCE_PROTOCOLS: classic,consumer,share
       KAFKA_SHARE_GROUP_PROTOCOL_ENABLE: "true"
 
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 10s
+    # healthcheck:
+    #   test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    #   interval: 10s
+    #   retries: 5
+    #   start_period: 30s
+    #   timeout: 10s
     networks:
       - kafka-net  
     volumes:
@@ -95,35 +93,53 @@ services:
     depends_on:
       - kafka1
   
-  kafka4:
-    image: apache/kafka:4.1.0
-    container_name: kafka4
-
+  api:
+    build:
+      context: ..
+      dockerfile: docker/api.Dockerfile
+    container_name: api-service
     ports:
-      - "9096:9092"
-
+      - "8083:8083"
     environment:
-      CLUSTER_ID: 'NhzDqHe8TgW6iJmwh2SFGg'
-      KAFKA_NODE_ID: 4
-      KAFKA_PROCESS_ROLES: broker
-      KAFKA_LISTENERS: BROKER://kafka4:29092,EXTERNAL://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: BROKER://kafka4:29092,EXTERNAL://localhost:9096
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_INTER_BROKER_LISTENER_NAME: BROKER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,BROKER:PLAINTEXT
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093
-      KAFKA_UNSTABLE_API_VERSION_ENABLE: "true"
-      KAFKA_GROUP_COORDINATOR_REBALANCE_PROTOCOLS: classic,consumer,share
-      KAFKA_SHARE_GROUP_PROTOCOL_ENABLE: "true"
-
-    networks:
-      - kafka-net  
-    volumes:
-      - ./kafka4-storage:/tmp/kafka-logs
-    
+      KAFKA_BROKERS: kafka1:29092,kafka2:29092,kafka3:29092
+      KAFKA_TOPIC: raw-user-events
     depends_on:
       - kafka1
-  
+      - kafka2
+      - kafka3
+    networks:
+      - kafka-net
+
+  processor:
+    container_name: processor
+    build:
+      context: ..
+      dockerfile: docker/processor.Dockerfile
+    environment:
+      KAFKA_BROKERS: kafka1:29092,kafka2:29092,kafka3:29092
+      MONGO_URI: mongodb://mongo:27017
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    networks:
+      - kafka-net
+
+  service-aggregator:
+    container_name: service-aggregator
+    build:
+      context: ..
+      dockerfile: docker/aggregator.Dockerfile
+    environment:
+      KAFKA_BROKERS: kafka1:29092,kafka2:29092,kafka3:29092
+      MONGO_URI: mongodb://mongo:27017
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    networks:
+      - kafka-net
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: pro-kafka-ui
@@ -181,31 +197,6 @@ services:
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka1:29092, kafka2:29092, kafka3:29092
-
-  # Additional Service for kafka connect in distributed mode
-  connect-distributed:
-    image: apache/kafka:4.0.0
-    hostname: connect-distributed
-    container_name: connect-distributed
-
-    ports:
-      - "8083:8083"
-    
-    depends_on:
-      - kafka1
-      - kafka2
-      - kafka3
-
-    networks:
-      - kafka-net
-
-    volumes:
-      - ./connect-distributed.properties:/tmp/connect-distributed.properties
-      - ./input.txt:/tmp/input.txt
-      - ./input.json:/tmp/input.json
-
-    command: >
-      /bin/bash -c "/opt/kafka/bin/connect-distributed.sh /tmp/connect-distributed.properties"
   
   mongo:
     image: mongo:7
