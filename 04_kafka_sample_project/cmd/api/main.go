@@ -20,7 +20,12 @@ func main() {
 	topic := util.GetEnv("KAFKA_TOPIC", "raw-user-events")
 
 	producer := kafka.NewProducer(brokers, topic)
-	defer producer.Close()
+	defer func() {
+		err := producer.Close()
+		if err != nil {
+			log.Fatal("error when closing raw producer:", err)
+		}
+	}()
 
 	eventService := services.NewEventService(producer)
 	eventHandler := handler.NewEventHandler(eventService)

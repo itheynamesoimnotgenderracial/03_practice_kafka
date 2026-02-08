@@ -21,6 +21,19 @@ func main() {
 	consumer := kafka.NewConsumer(brokers, "processor-grp", "raw-user-events")
 	processedEventProducer := kafka.NewProducer(brokers, "processed-user-events")
 	dlqProducer := kafka.NewProducer(brokers, "dead-letter-events")
+
+	defer func() {
+		err := processedEventProducer.Close()
+		if err != nil {
+			log.Fatal("error when closing processes event producer", err)
+		}
+
+		err = dlqProducer.Close()
+		if err != nil {
+			log.Fatal("error when closing processes dqlProducer", err)
+		}
+	}()
+
 	mongoClient, err := mongo.New(os.Getenv("MONGO_URI"))
 	if err != nil {
 		log.Fatal(err)
@@ -66,8 +79,8 @@ func main() {
 		if err != nil {
 			log.Println("error in publishing processed events:", err)
 			continue
-		} else {
-			log.Printf("%v %v\n", time.Now().Unix(), event)
 		}
+
+		log.Printf("%v %v\n", time.Now().Unix(), event)
 	}
 }

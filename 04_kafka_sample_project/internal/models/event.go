@@ -45,3 +45,19 @@ type UserOrderAggregates struct {
 	LastOrderAt time.Time `bson:"last_order_at" json:"last_order_at"`
 	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
 }
+
+type UserTotalOrder struct {
+	Id          string `bson:"id" json:"id"`
+	TotalAmount int64  `bson:"total_amount" json:"total_amount"`
+	TotalOrders int64  `bson:"total_orders" json:"total_orders"`
+}
+
+type UserOrderWindowAggregate struct {
+	UserID      string    `bson:"user_id" json:"user_id"`
+	WindowType  string    `bson:"window_type" json:"window_type"`
+	WindowStart time.Time `bson:"window_start" json:"window_start"`
+	TotalOrders int64     `bson:"total_orders" json:"total_orders"`
+	TotalAmount float64   `bson:"total_amount" json:"total_amount"`
+	LastOrderAt time.Time `bson:"last_order_at" json:"last_order_at"`
+	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
+}
