@@ -1,0 +1,5 @@
+[
+    {"type": "login", "user_id": "1", "payload": "Sample processed data"},
+    {"type": "logout", "user_id": "1", "payload": "logging out"},
+    {"type": "login", "user_id": "1", "payload": "Sample processed data with mongo DB connection again"}
+]

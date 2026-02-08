@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -37,6 +38,12 @@ func getUserIDFromRequest(ctx *gin.Context) (string, error) {
 	return userID, nil
 }
 
+func printAlloc() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Printf("%d KB\n", m.Alloc/1024)
+}
+
 type UserNotifications map[string][]models.Notification
 
 type NotificationStore struct {
@@ -45,12 +52,12 @@ type NotificationStore struct {
 }
 
 func (ns *NotificationStore) Add(userID string, notification models.Notification) {
-	newNotifications := make([]models.Notification, len(ns.data[userID])+1)
 	ns.mu.Lock()
 	defer ns.mu.Unlock()
-	copy(newNotifications, ns.data[userID])
-	newNotifications = append(newNotifications, notification)
-	ns.data[userID] = newNotifications
+	printAlloc()
+	runtime.GC()
+	runtime.KeepAlive(notification)
+	ns.data[userID] = append(ns.data[userID], notification)
 }
 
 func (ns *NotificationStore) Get(userID string) []models.Notification {
@@ -94,6 +101,8 @@ func setupConsumerGroup(ctx context.Context, store *NotificationStore) {
 			continue
 		}
 		consumerStore.store.Add(userID, notification)
+		// benchmark proof: C:\Users\Cyrile Lagumbay\OneDrive\Documents\Documentation\Benchmark\01_my_first_benchman
+		printAlloc()
 	}
 }
 
