@@ -61,3 +61,28 @@ type UserOrderWindowAggregate struct {
 	LastOrderAt time.Time `bson:"last_order_at" json:"last_order_at"`
 	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
 }
+
+type WindowAggregate struct {
+	UserID      string    `bson:"user_id" json:"user_id"`
+	WindowType  string    `bson:"window_type" json:"window_type"`
+	WindowStart time.Time `bson:"window_start" json:"window_start"`
+	WindowEnd   time.Time `bson:"window_end" json:"window_end"`
+	TotalAmount float64   `bson:"total_amount" json:"total_amount"`
+	TotalCount  int64     `bson:"total_count" json:"total_count"`
+	Status      string    `bson:"status" json:"status"`
+	FinalizedAt time.Time `bson:"finalized_at,omitempty" json:"finalized_at,omitempty"`
+	PublishedAt time.Time `bson:"published_at,omitempty" json:"published_at,omitempty"`
+	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at"`
+}
+
+type AggregateCorrection struct {
+	UserID      string    `bson:"user_id" json:"user_id"`
+	WindowType  string    `bson:"window_type" json:"window_type"`
+	WindowStart time.Time `bson:"window_start" json:"window_start"`
+	WindowEnd   time.Time `bson:"window_end" json:"window_end"`
+	DeltaAmount float64   `bson:"delta_amount" json:"delta_amount"`
+	DeltaCount  int64     `bson:"delta_count" json:"delta_count"`
+	EventID     string    `bson:"event_id" json:"event_id"`
+	EventTime   time.Time `bson:"event_time" json:"event_time"`
+	CreatedAt   time.Time `bson:"created_at" json:"created_at"`
+}

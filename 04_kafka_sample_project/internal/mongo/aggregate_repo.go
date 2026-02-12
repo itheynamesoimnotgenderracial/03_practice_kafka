@@ -18,12 +18,14 @@ type AggregateRepoStore interface {
 type AggregateRepo struct {
 	Coll          *mongo.Collection
 	WindowAggrCol *mongo.Collection
+	WindowAggr    *mongo.Collection
 }
 
 func NewAggregateRepo(db *mongo.Database) AggregateRepoStore {
 	return &AggregateRepo{
 		Coll:          db.Collection("user_order_aggregates"),
 		WindowAggrCol: db.Collection("user_order_window_aggregates"),
+		WindowAggr:    db.Collection("window_aggregates"),
 	}
 }
 
@@ -92,5 +94,6 @@ func (r *AggregateRepo) UpdateWindow(
 		opts,
 	).Decode(&agg)
 
+	agg.LastOrderAt = time.Now().UTC()
 	return &agg, err
 }
