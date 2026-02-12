@@ -4,4 +4,7 @@ docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic dead-lett
 docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic user-metrics-1m --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092 && \
 docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic revenue-metrics-1m --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092 && \
 docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic user-order-aggregates-hourly --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092 && \
-docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic user-order-aggregates-daily --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic user-order-aggregates-daily --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092 && \
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic user-order-aggregates-daily-final --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092 && \
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic user-order-aggregates-hourly-final --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092 && \
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic user-order-aggregates-corrections --partitions 3 --replication-factor 3 --bootstrap-server kafka1:29092
