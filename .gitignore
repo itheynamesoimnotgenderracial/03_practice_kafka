@@ -5,3 +5,4 @@
 02_kafka_notification_project/kafka/kafka*/*
 03_kafka_go_mongodb/kafka/storage*/*
 04_kafka_sample_project/deploy/kafka*/*
+05_kafka_chat_sample_project/backend/deploy/kafka*/*
