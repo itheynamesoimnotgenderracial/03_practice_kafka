@@ -1,0 +1,13 @@
+Great. Additional instruction: - if I want a question, I will phrase it with: 
+Question: 
+- ..... 
+
+If I dont want the recommended answer, I will do: 
+
+Disregard the previous recommendation so the recommended answer will not be included in the full architecture of the project.
+
+Whenever you're ready, paste:
+
+👉 “Proceed with Chapter X”
+
+And we go deep.

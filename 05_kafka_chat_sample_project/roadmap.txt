@@ -1,0 +1,270 @@
+PART 1 — Kafka Infrastructure & Exactly-Once Foundation
+Chapter 1 — Kafka Cluster Hardening for Transactions
+
+KRaft configuration review
+
+Transaction log replication
+
+ISR tuning
+
+Idempotence requirements
+
+Min in-sync replicas
+
+Chapter 2 — Topic Design & Partitioning Strategy
+
+chat.raw
+
+chat.validated
+
+chat.timeline
+
+Keying by room
+
+Ordering guarantees
+
+Scaling strategy
+
+Chapter 3 — Kafka Event Contract Design
+
+Message schema
+
+Avro vs JSON
+
+Schema Registry integration
+
+Event versioning strategy
+
+Backward compatibility rules
+
+Chapter 4 — Exactly-Once Semantics Deep Dive
+
+Idempotent producers
+
+Transactions
+
+sendOffsetsToTransaction
+
+read_committed isolation
+
+Failure scenarios
+
+Rebalance handling
+
+Zombie fencing
+
+Delivery guarantees explained
+
+Chapter 5 — Local Dev vs Production Kafka Differences
+
+Docker setup
+
+Replication in prod
+
+TLS/SASL
+
+Observability
+
+Metrics
+
+🟦 PART 2 — Golang Kafka Core Architecture
+Chapter 6 — Shared Kafka Client Layer (Go)
+
+Transactional producer wrapper
+
+Consumer abstraction
+
+Config builder
+
+Retry policies
+
+Backoff strategies
+
+Chapter 7 — API Service (Gin → Kafka Producer)
+
+Using Gin
+
+REST endpoint: POST /messages
+
+Idempotency key support
+
+Producer acks=all
+
+Retry semantics
+
+Error classification
+
+Chapter 8 — Processor Service (Exactly Once Engine)
+
+CRITICAL CHAPTER
+
+Transactional consumer-producer
+
+Atomic consume + produce
+
+Offset commits in transaction
+
+Rebalance safe logic
+
+Graceful shutdown
+
+Chapter 9 — Aggregator Service (Materialized View Builder)
+
+Consumes chat.validated
+
+Writes to MongoDB
+
+Handles replay
+
+Handles dedupe
+
+Idempotent upserts
+
+Chapter 10 — MongoDB Data Modeling for Chat
+
+Room collection
+
+Message collection
+
+Index strategy
+
+TTL
+
+Pagination strategy
+
+Hot partition mitigation
+
+🟦 PART 3 — Real-Time Layer (WebSocket Architecture)
+Chapter 11 — WebSocket Gateway Design
+
+Connection manager
+
+Room subscription registry
+
+Backpressure handling
+
+Fan-out strategy
+
+Chapter 12 — Bridging Kafka to WebSocket
+
+Consuming chat.timeline
+
+Broadcasting
+
+Handling slow clients
+
+Horizontal scaling pattern
+
+Chapter 13 — Horizontal Scaling WebSocket
+
+Stateless WS servers
+
+Redis vs Kafka pub/sub decision
+
+Sticky sessions
+
+Load balancer config
+
+🟦 PART 4 — TanStack Start Frontend Architecture
+
+Using TanStack Start
+
+Chapter 14 — Frontend Project Structure
+
+Server routes
+
+Client components
+
+Data loaders
+
+WebSocket hook abstraction
+
+Chapter 15 — WebSocket Client Integration
+
+Reconnect logic
+
+Exponential backoff
+
+Room subscription flow
+
+Offline handling
+
+Chapter 16 — Optimistic UI Strategy
+
+Send message immediately
+
+Reconcile with server event
+
+Deduplication logic
+
+Chapter 17 — Infinite Scroll Chat Timeline
+
+Cursor pagination
+
+Mongo query design
+
+TanStack query caching
+
+🟦 PART 5 — Advanced Kafka Patterns
+Chapter 18 — Exactly Once Failure Scenarios Simulation
+
+Broker crash mid transaction
+
+Consumer crash
+
+Network partition
+
+Duplicate message replay
+
+Chapter 19 — Dead Letter Topics
+
+Validation failure routing
+
+Poison pill detection
+
+Retry topic pattern
+
+Chapter 20 — Kafka Monitoring & Observability
+
+Lag metrics
+
+Consumer group monitoring
+
+Throughput analysis
+
+Transaction metrics
+
+🟦 PART 6 — Production Hardening
+Chapter 21 — Security
+
+SASL authentication
+
+TLS encryption
+
+JWT for API
+
+WS authentication
+
+Chapter 22 — Deployment Architecture
+
+Kubernetes layout
+
+Scaling strategy
+
+Partition scaling math
+
+Rolling deployments with transactions
+
+Chapter 23 — Load Testing the Chat System
+
+k6 test plan
+
+10k concurrent users simulation
+
+Kafka throughput tuning
+
+🟦 PART 7 — Architecture Theory (Deep Understanding)
+Chapter 24 — Why Kafka Over Direct WebSocket PubSub
+Chapter 25 — Exactly Once vs At Least Once Tradeoffs
+Chapter 26 — Event-Driven Chat vs Traditional DB Writes
+Chapter 27 — CQRS + Event Sourcing Discussion

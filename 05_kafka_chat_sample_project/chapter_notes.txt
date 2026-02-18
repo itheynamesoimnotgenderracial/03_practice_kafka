@@ -1,0 +1,17 @@
+* Chapter 2
+Creation of topics
+
+docker exec -it kafka1 \
+/opt/kafka/bin/kafka-topics.sh \
+--create \
+--topic chat.raw \
+--partitions 6 \
+--replication-factor 3 \
+--bootstrap-server kafka1:29092
+
+Repeat for:
+
+chat.validated
+chat.timeline
+
+==================================================================================
