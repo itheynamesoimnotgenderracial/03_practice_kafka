@@ -19,19 +19,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type ChatTimelineEvent struct {
-	MessageID string `avro:"message_id" json:"message_id" bson:"message_id"`
-	RoomID    string `avro:"room_id" json:"room_id" bson:"room_id"`
-	UserID    string `avro:"user_id" json:"user_id" bson:"user_id"`
-	Content   string `avro:"content" json:"content" bson:"content"`
-	Sequence  int64  `avro:"sequence" json:"sequence" bson:"sequence"`
-	Timestamp int64  `avro:"timestamp" json:"timestamp" bson:"timestamp"`
-}
-
 func main() {
 	brokers := utils.GetEnv("KAFKA_BROKERS", "kafka1:29092")
 	mongoURI := utils.GetEnv("MONGO_URI", "mongodb://mongo:27017")
 	schemaRegistryURL := utils.GetEnv("SCHEMA_REGISTRY_URL", "http://schema-registry:8081")
+	ctx := context.Background()
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": brokers,
@@ -52,6 +44,11 @@ func main() {
 		log.Fatal("failed to create avro deserializer:", err)
 	}
 
+	leaderboardSerializer, err := avro.NewGenericSerializer(srClient, serde.ValueSerde, avro.NewSerializerConfig())
+	if err != nil {
+		log.Fatal("failed to create avro serializer for leader board:", err)
+	}
+
 	defer func() {
 		err = c.Close()
 		if err != nil {
@@ -64,6 +61,24 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to subscribe to processed events:", err)
 	}
+
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": brokers,
+	})
+	if err != nil {
+		log.Fatal("Failed to create producer:", err)
+	}
+
+	go func() {
+		for e := range producer.Events() {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					log.Println("Delivery failed:", ev.TopicPartition)
+				}
+			}
+		}
+	}()
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
@@ -97,57 +112,106 @@ func main() {
 				continue
 			}
 
-			var update map[string]interface{}
-			var opts *options.UpdateOptions
-
 			// Hourly Aggregate
 			hourlyWindowStart, _ := handler.ComputeHourlyWindow(event.Timestamp)
 			dailyWindowStart, _ := handler.ComputeDailylyWindow(event.Timestamp)
-			hourlyFilter := map[string]interface{}{
-				"room_id":      event.RoomID,
-				"window_start": hourlyWindowStart.Unix(),
-				// "window_end":   hourlyWindowEnd,
-			}
 
-			update = map[string]interface{}{
-				"$inc": map[string]interface{}{"total_messages": 1},
-				"$set": map[string]interface{}{
-					"finalized":  true,
-					"updated_at": time.Now().UTC(),
-				},
-				"$addToSet": map[string]interface{}{"active_users": event.UserID},
-			}
+			processWindow(
+				ctx,
+				collection,
+				producer,
+				leaderboardSerializer,
+				event,
+				hourlyWindowStart.Unix(),
+				"hourly",
+			)
 
-			opts = options.Update().SetUpsert(true)
-			_, err = collection.UpdateOne(context.TODO(), hourlyFilter, update, opts)
-			if err != nil {
-				log.Println("Mongo update failed:", err)
-			}
+			processWindow(
+				ctx,
+				collection,
+				producer,
+				leaderboardSerializer,
+				event,
+				dailyWindowStart.Unix(),
+				"daily",
+			)
 
-			// Daily Aggregate
-			dailyFilter := map[string]interface{}{
-				"room_id":      event.RoomID,
-				"window_start": dailyWindowStart.Unix(),
-				// "window_end":   dailyWindowEnd,
-			}
-
-			update = map[string]interface{}{
-				"$inc": map[string]interface{}{"total_messages": 1},
-				"$set": map[string]interface{}{
-					"finalized":  true,
-					"updated_at": time.Now().UTC(),
-				},
-				"$addToSet": map[string]interface{}{"active_users": event.UserID},
-			}
-
-			opts = options.Update().SetUpsert(true)
-			_, err = collection.UpdateOne(context.TODO(), dailyFilter, update, opts)
-			if err != nil {
-				log.Println("Mongo update failed:", err)
-			}
-			fmt.Println("Done processing data✅")
+			fmt.Println("Processed event + published leaderboard ✅")
 		}
 	}
 
-	client.Disconnect(context.TODO())
+	client.Disconnect(ctx)
+}
+
+func processWindow(
+	ctx context.Context,
+	collection *mongo.Collection,
+	producer *kafka.Producer,
+	serializer *avro.GenericSerializer,
+	event ChatTimelineEvent,
+	windowStart int64,
+	windowType string,
+) {
+	filter := map[string]interface{}{
+		"room_id":      event.RoomID,
+		"window_start": windowStart,
+		"windowType":   windowType,
+	}
+
+	update := map[string]interface{}{
+		"$inc": map[string]interface{}{
+			"total_messages": 1,
+		},
+		"$addToSet": map[string]interface{}{"active_users": event.UserID},
+		"$set": map[string]interface{}{
+			"finalized":  true,
+			"updated_at": time.Now().UTC(),
+		},
+	}
+
+	opts := options.Update().SetUpsert(true)
+	_, err := collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		log.Println("Mongo update failed:", err)
+	}
+
+	// Fetch updated doc
+	var result struct {
+		TotalMessages int64    `bson:"total_messages"`
+		ActiveUsers   []string `bson:"active_users"`
+	}
+
+	collection.FindOne(ctx, filter).Decode(&result)
+
+	leaderboardEvent := ChatLeaderboardEvent{
+		RoomID:           event.RoomID,
+		WindowStart:      windowStart,
+		WindowType:       windowType,
+		TotalMessages:    result.TotalMessages,
+		ActiveUsersCount: int64(len(result.ActiveUsers)),
+		Timestamp:        time.Now().Unix(),
+	}
+	serialized, err := serializer.Serialize(
+		"chat.leaderboard-value",
+		&leaderboardEvent,
+	)
+	if err != nil {
+		log.Println("Failed to serialize leaderboard event:", err)
+		return
+	}
+
+	topic := "chat.leaderboard"
+
+	err = producer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{
+			Topic:     &topic,
+			Partition: kafka.PartitionAny,
+		},
+		Value: serialized,
+	}, nil)
+	if err != nil {
+		log.Println("Failed to chat leaderboard message:", err)
+		return
+	}
+	fmt.Printf("Done processing %s data✅\n", windowType)
 }
