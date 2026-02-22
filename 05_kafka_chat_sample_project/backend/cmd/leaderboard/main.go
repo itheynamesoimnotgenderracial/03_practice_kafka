@@ -3,46 +3,32 @@ package main
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
 	"sample-chat/cmd/utils"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"syscall"
 )
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	redisAddr := utils.GetEnv("REDIS_ADDR", "localhost:6379")
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(utils.GetEnv("MONGO_URI", "mongodb://mongo:27017")))
-	if err != nil {
-		log.Fatal(err)
-	}
+	redis := NewRedisClient(redisAddr)
+	// leader := NewLeaderManager(redis)
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
 
-	collection := client.Database("chat").Collection("room_metrics")
+	// go leader.Start(ctx)
+	// go StartWebsocker(redis)
 
-	hub := NewHub()
-	go hub.Run()
+	go StartKafkaConsumer(ctx, redis)
+	go StartWebsocketServer(ctx, redis)
 
-	service := &ServiceStore{
-		Collection: collection,
-		Hub:        hub,
-	}
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	go service.StartBroadcaster()
+	<-sig
 
-	router := gin.Default()
-	router.GET("/leaderboard/top-rooms", func(ctx *gin.Context) {
-		results, err := service.FetchTopRooms(10)
-		if err != nil {
-			ctx.JSON(500, gin.H{"error": "Failed"})
-			return
-		}
-		ctx.JSON(200, results)
-	})
-
-	router.GET("/ws/leaderboard", HandleWebSocket(hub))
-	port := "8084"
-	router.Run(":" + port)
+	log.Println("Shutting down...")
 }
