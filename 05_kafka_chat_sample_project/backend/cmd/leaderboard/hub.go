@@ -95,7 +95,7 @@ func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 	hub := NewHub()
 
 	// Start ping every 30 seconds
-	hub.StartPing(pingPeriod)
+	// hub.StartPing(pingPeriod)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -105,20 +105,20 @@ func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 		}
 
 		// Configure connection timeouts
-		conn.SetReadLimit(512)
-		err = conn.SetReadDeadline(time.Now().Add(pongWait))
-		if err != nil {
-			fmt.Println("error when set readline outside:", err)
-			return
-		}
-		conn.SetPongHandler(func(appData string) error {
-			err := conn.SetReadDeadline(time.Now().Add(pongWait))
-			if err != nil {
-				fmt.Println("set pong handler error:", err)
-				return err
-			}
-			return nil
-		})
+		// conn.SetReadLimit(512)
+		// err = conn.SetReadDeadline(time.Now().Add(pongWait))
+		// if err != nil {
+		// 	fmt.Println("error when set readline outside:", err)
+		// 	return
+		// }
+		// conn.SetPongHandler(func(appData string) error {
+		// 	err := conn.SetReadDeadline(time.Now().Add(pongWait))
+		// 	if err != nil {
+		// 		fmt.Println("set pong handler error:", err)
+		// 		return err
+		// 	}
+		// 	return nil
+		// })
 
 		hub.AddClient(conn)
 

@@ -63,7 +63,7 @@ func StartKafkaConsumer(ctx context.Context, redis *RedisClientStore) {
 	for run {
 		select {
 		case sig := <-sigchan:
-			log.Printf("Caught signal %v: terminating\n", sig)
+			log.Printf("Caught signal %s: terminating\n", sig)
 			run = false
 		default:
 			m, err := c.ReadMessage(100 * time.Millisecond)

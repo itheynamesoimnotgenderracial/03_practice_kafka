@@ -74,7 +74,7 @@ func (r *RedisClientStore) GetTopN(ctx context.Context, n int64) ([]LeaderboardE
 		return nil, err
 	}
 
-	leaderboard := make([]LeaderboardEntry, 0, len(results))
+	leaderboard := make([]LeaderboardEntry, len(results))
 	for _, z := range results {
 		leaderboard = append(leaderboard, LeaderboardEntry{
 			RoomID:        z.Member.(string),
