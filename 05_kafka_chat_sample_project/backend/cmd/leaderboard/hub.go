@@ -70,7 +70,7 @@ func (c *Client) writePump() {
 		ticker.Stop()
 		err := c.conn.Close()
 		if err != nil {
-			log.Fatal("failed to close websocket connection")
+			log.Println("failed to close websocket connection")
 		}
 	}()
 
@@ -101,7 +101,7 @@ func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		err := c.conn.Close()
-		log.Fatal("failure to close connection when reading to pump:", err)
+		log.Println("failure to close connection when reading to pump:", err)
 	}()
 
 	c.conn.SetReadLimit(maxMessageSize)
@@ -126,23 +126,33 @@ func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 	hub := NewHub()
 	go hub.Run()
 
+	server := &http.Server{
+		Addr: ":8084",
+	}
+
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log.Println("Upgrade error:", err)
+		select {
+		case <-ctx.Done():
+			http.Error(w, "Server shutting down", http.StatusServiceUnavailable)
 			return
+		default:
+			conn, err := upgrader.Upgrade(w, r, nil)
+			if err != nil {
+				log.Println("Upgrade error:", err)
+				return
+			}
+
+			client := &Client{
+				hub:  hub,
+				conn: conn,
+				send: make(chan []byte, sendBufferSize),
+			}
+
+			hub.register <- client
+
+			go client.writePump()
+			go client.readPump()
 		}
-
-		client := &Client{
-			hub:  hub,
-			conn: conn,
-			send: make(chan []byte, sendBufferSize),
-		}
-
-		hub.register <- client
-
-		go client.writePump()
-		go client.readPump()
 	})
 
 	go func() {
@@ -159,6 +169,29 @@ func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 		}
 	}()
 
-	log.Println("🌐 WebSocket server running on :8085")
-	http.ListenAndServe(":8084", nil)
+	go func() {
+		log.Println("🌐 WebSocket server running on :8085")
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Println("ListenAndServe:", err)
+		}
+	}()
+
+	<-ctx.Done()
+	log.Println("🛑 WebSocket server shutting down")
+
+	// 1️⃣ Notify clients
+	hub.broadcast <- []byte(`"type:": "server_shutdown"`)
+
+	// 2️⃣ Give clients time to receive
+	time.Sleep(2 * time.Second)
+
+	// 3️⃣ Graceful HTTP shutdown
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Println("server shutdown failed:", err)
+	}
+
+	log.Println("✅ WebSocket server exited cleanly")
 }

@@ -6,7 +6,9 @@ import (
 	"os"
 	"os/signal"
 	"sample-chat/cmd/utils"
+	"sync"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -16,13 +18,40 @@ func main() {
 
 	redis := NewRedisClient(redisAddr)
 
-	go StartKafkaConsumer(ctx, redis)
-	go StartWebsocketServer(ctx, redis)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+		StartKafkaConsumer(ctx, redis)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		StartWebsocketServer(ctx, redis)
+	}()
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sig
 
-	log.Println("Shutting down...")
+	log.Println("🚦 Shutdown signal received")
+
+	cancel()
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		log.Println("✅ Graceful shutdown complete")
+	case <-time.After(15 * time.Second):
+		log.Println("⚠️ Forced shutdown (timeout)")
+	}
 }
