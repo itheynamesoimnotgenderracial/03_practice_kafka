@@ -15,12 +15,6 @@ func main() {
 	defer cancel()
 
 	redis := NewRedisClient(redisAddr)
-	// leader := NewLeaderManager(redis)
-	// ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel()
-
-	// go leader.Start(ctx)
-	// go StartWebsocker(redis)
 
 	go StartKafkaConsumer(ctx, redis)
 	go StartWebsocketServer(ctx, redis)

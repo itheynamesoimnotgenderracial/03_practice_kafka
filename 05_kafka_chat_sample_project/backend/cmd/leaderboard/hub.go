@@ -5,97 +5,126 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-type Hub interface {
-	Run()
-	AddClient(conn *websocket.Conn)
-	StartPing(interval time.Duration)
-}
-
 const (
-	pongWait   = 90 * time.Second
-	pingPeriod = 30 * time.Second
+	writeWait      = 10 * time.Second
+	pongWait       = 90 * time.Second
+	pingPeriod     = 30 * time.Second
+	maxMessageSize = 512
+	sendBufferSize = 256
 )
 
-type HubStore struct {
-	clients map[*websocket.Conn]bool
-	mutex   sync.Mutex
+type Client struct {
+	hub  *Hub
+	conn *websocket.Conn
+	send chan []byte
 }
 
-func NewHub() *HubStore {
-	return &HubStore{
-		clients: make(map[*websocket.Conn]bool),
+type Hub struct {
+	clients    map[*Client]bool
+	register   chan *Client
+	unregister chan *Client
+	broadcast  chan []byte
+}
+
+func NewHub() *Hub {
+	return &Hub{
+		clients:    make(map[*Client]bool),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
+		broadcast:  make(chan []byte),
 	}
 }
 
-func (h *HubStore) AddClient(conn *websocket.Conn) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-	h.clients[conn] = true
-}
-
-func (h *HubStore) RemoveClient(conn *websocket.Conn) {
-	h.mutex.Lock()
-	delete(h.clients, conn)
-	defer func() {
-		h.mutex.Unlock()
-		err := conn.Close()
-		if err != nil {
-			fmt.Println("error in remove hub client:", err)
-		}
-	}()
-}
-
-func (h *HubStore) Broadcast(message []byte) {
-	h.mutex.Lock()
-	defer h.mutex.Unlock()
-
-	for conn := range h.clients {
-		err := conn.WriteMessage(websocket.TextMessage, message)
-		if err != nil {
-			fmt.Println("🚨 error when writing data in the socket!")
-			conn.Close()
-			delete(h.clients, conn)
-		}
-	}
-}
-
-func (h *HubStore) StartPing(interval time.Duration) {
-	ticker := time.NewTicker(interval)
-
-	go func() {
-		for range ticker.C {
-			h.mutex.Lock()
-			for conn := range h.clients {
-				err := conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-				if err != nil {
-					fmt.Println("error in setWriteDeadline", err)
-					conn.Close()
-					delete(h.clients, conn)
-					break
-				}
-				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-					fmt.Println("error in writing websocket message", err)
-					conn.Close()
-					delete(h.clients, conn)
-					break
+func (h *Hub) Run() {
+	for {
+		select {
+		case client := <-h.register:
+			h.clients[client] = true
+		case client := <-h.unregister:
+			if _, ok := h.clients[client]; ok {
+				delete(h.clients, client)
+				close(client.send)
+			}
+		case message := <-h.broadcast:
+			for client := range h.clients {
+				select {
+				case client.send <- message:
+				default:
+					fmt.Println("🚨 Bffer is full. Client receive must be slow. Closing this connection for now")
+					close(client.send)
+					delete(h.clients, client)
 				}
 			}
-			h.mutex.Unlock()
+		}
+	}
+}
+
+func (c *Client) writePump() {
+	ticker := time.NewTicker(pingPeriod)
+	defer func() {
+		ticker.Stop()
+		err := c.conn.Close()
+		if err != nil {
+			log.Fatal("failed to close websocket connection")
 		}
 	}()
+
+	for {
+		select {
+		case message, ok := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			if err := c.conn.WriteMessage(websocket.TextMessage, message); err != nil {
+				fmt.Println("websocket write message failed:", err)
+				return
+			}
+		case <-ticker.C:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				fmt.Println("error with ping message:", err)
+				return
+			}
+		}
+	}
+}
+
+func (c *Client) readPump() {
+	defer func() {
+		c.hub.unregister <- c
+		err := c.conn.Close()
+		log.Fatal("failure to close connection when reading to pump:", err)
+	}()
+
+	c.conn.SetReadLimit(maxMessageSize)
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.conn.SetPongHandler(func(appData string) error {
+		err := c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		if err != nil {
+			fmt.Println("failed to meet the pong deadline:", err)
+			return err
+		}
+		return nil
+	})
+
+	for {
+		if _, _, err := c.conn.ReadMessage(); err != nil {
+			break
+		}
+	}
 }
 
 func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 	hub := NewHub()
-
-	// Start ping every 30 seconds
-	// hub.StartPing(pingPeriod)
+	go hub.Run()
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -104,34 +133,16 @@ func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 			return
 		}
 
-		// Configure connection timeouts
-		// conn.SetReadLimit(512)
-		// err = conn.SetReadDeadline(time.Now().Add(pongWait))
-		// if err != nil {
-		// 	fmt.Println("error when set readline outside:", err)
-		// 	return
-		// }
-		// conn.SetPongHandler(func(appData string) error {
-		// 	err := conn.SetReadDeadline(time.Now().Add(pongWait))
-		// 	if err != nil {
-		// 		fmt.Println("set pong handler error:", err)
-		// 		return err
-		// 	}
-		// 	return nil
-		// })
+		client := &Client{
+			hub:  hub,
+			conn: conn,
+			send: make(chan []byte, sendBufferSize),
+		}
 
-		hub.AddClient(conn)
+		hub.register <- client
 
-		go func() {
-			defer hub.RemoveClient(conn)
-			for {
-				_, _, err := conn.ReadMessage()
-				if err != nil {
-					fmt.Println("websocket read message error:", err)
-					break
-				}
-			}
-		}()
+		go client.writePump()
+		go client.readPump()
 	})
 
 	go func() {
@@ -143,7 +154,7 @@ func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 			case <-ctx.Done():
 				return
 			case msg := <-ch:
-				hub.Broadcast([]byte(msg.Payload))
+				hub.broadcast <- []byte(msg.Payload)
 			}
 		}
 	}()
