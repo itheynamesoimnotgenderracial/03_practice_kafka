@@ -54,7 +54,11 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/api /app/api
+# Copy wait-for-kafka script
+COPY --from=builder /app/scripts/wait-for-kafka.sh /wait-for-kafka.sh
+RUN chmod +x /wait-for-kafka.sh
 
 EXPOSE 8083
 
+ENTRYPOINT ["/wait-for-kafka.sh"]
 CMD ["/app/api"]
