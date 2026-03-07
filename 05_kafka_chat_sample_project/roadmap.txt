@@ -165,6 +165,11 @@ Sticky sessions
 
 Load balancer config
 
+- Backend Hardening
+* Backpressure handling 
+* WS message buffering 
+* Graceful rolling restart handling
+
 🟦 PART 4 — TanStack Start Frontend Architecture
 
 Using TanStack Start

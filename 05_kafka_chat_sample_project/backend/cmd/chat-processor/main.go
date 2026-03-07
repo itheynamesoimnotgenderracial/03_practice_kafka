@@ -12,6 +12,9 @@ import (
 	"sample-chat/internal/kafka"
 
 	baseKafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry"
+	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde"
+	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde/avro"
 )
 
 var (
@@ -21,9 +24,25 @@ var (
 
 func main() {
 	brokers := utils.GetEnv("KAFKA_BROKERS", "kafka1:29092")
+	schemaRegistryURL := utils.GetEnv("SCHEMA_REGISTRY_URL", "http://schema-registry:8081")
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	srClient, err := schemaregistry.NewClient(schemaregistry.NewConfig(schemaRegistryURL))
+	if err != nil {
+		log.Fatal("failed to create schema registry client:", err)
+	}
+
+	chatRawDeserializer, err := avro.NewGenericDeserializer(srClient, serde.ValueSerde, avro.NewDeserializerConfig())
+	if err != nil {
+		log.Fatal("failed to create avro deserializer:", err)
+	}
+
+	chatValidatedSerializer, err := avro.NewGenericSerializer(srClient, serde.ValueSerde, avro.NewSerializerConfig())
+	if err != nil {
+		log.Fatal("failed to create avro serializer:", err)
+	}
 
 	consumer, err := newConsumer(brokers, groupID)
 	if err != nil {
@@ -41,12 +60,18 @@ func main() {
 		consumerErr := consumer.Close()
 		txProducerErr := txProducer.Abort(ctx)
 		txCommitErr := txProducer.Commit(ctx)
+		chatRawDeserializerErr := chatRawDeserializer.Close()
+		chatValidatedSerializerErr := chatValidatedSerializer.Close()
 		if consumerErr != nil {
 			err = consumerErr
 		} else if txProducerErr != nil {
 			err = txProducerErr
 		} else if txCommitErr != nil {
 			err = txCommitErr
+		} else if chatRawDeserializerErr != nil {
+			err = chatRawDeserializerErr
+		} else if chatValidatedSerializerErr != nil {
+			err = chatValidatedSerializerErr
 		}
 
 		if err != nil {
@@ -63,7 +88,9 @@ func main() {
 		cancel()
 	}()
 
-	err = kafka.RunProcessor(ctx, consumer, txProducer.(*kafka.TxProducer), handler.ChatValidationHandler)
+	validationHandler := handler.ChatValidationHandler(chatRawDeserializer, chatValidatedSerializer)
+
+	err = kafka.RunProcessor(ctx, consumer, txProducer.(*kafka.TxProducer), validationHandler)
 	if err != nil {
 		log.Println("processor exited:", err)
 	}

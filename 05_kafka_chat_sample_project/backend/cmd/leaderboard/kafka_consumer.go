@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"os"
-	"os/signal"
 	"sample-chat/cmd/utils"
-	"syscall"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -55,16 +52,11 @@ func StartKafkaConsumer(ctx context.Context, redis *RedisClientStore) {
 		log.Fatal("failed to subscribe to processed events:", err)
 	}
 
-	run := true
-	// Graceful shutdown
-	sigchan := make(chan os.Signal, 1)
-	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
-
-	for run {
+	for {
 		select {
-		case sig := <-sigchan:
-			log.Printf("Caught signal %s: terminating\n", sig)
-			run = false
+		case <-ctx.Done():
+			log.Println("Kafka consumer shutting down...")
+			return
 		default:
 			m, err := c.ReadMessage(100 * time.Millisecond)
 			if err != nil {
