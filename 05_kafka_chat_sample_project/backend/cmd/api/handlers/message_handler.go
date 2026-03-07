@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"sample-chat/cmd/api/repository"
 	pkgmodels "sample-chat/cmd/pkg-models"
-	"sample-chat/internal/kafka"
+
 	"strconv"
 	"time"
 
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	baseKafka "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde/avro"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -18,12 +20,12 @@ import (
 
 type MessageHandler struct {
 	repo       *repository.MessageRepository
-	producer   kafka.TxProducerStore
+	producer   *baseKafka.Producer
 	serializer *avro.GenericSerializer
 	ctx        context.Context
 }
 
-func NewMessageHandler(repo *repository.MessageRepository, producerCfg kafka.TxProducerStore, avroSerializer *avro.GenericSerializer, ctx context.Context) *MessageHandler {
+func NewMessageHandler(repo *repository.MessageRepository, producerCfg *baseKafka.Producer, avroSerializer *avro.GenericSerializer, ctx context.Context) *MessageHandler {
 	return &MessageHandler{
 		repo:       repo,
 		producer:   producerCfg,
@@ -83,8 +85,8 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("user_id")
-
+	userID := c.GetHeader("user_id")
+	fmt.Println("user id ===========>", userID)
 	event := pkgmodels.ChatRawEvent{
 		MessageID: uuid.New().String(),
 		RoomID:    req.RoomID,
@@ -100,23 +102,42 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 	}
 
 	topic := "chat.raw"
+	deliveryChan := make(chan baseKafka.Event)
 
-	if err := h.producer.Begin(); err != nil {
-		log.Println("handler msg error:", err)
-		h.producer.Abort(h.ctx)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to begin send message transaction"})
-		return
-	}
-
-	if err := h.producer.Produce(topic, []byte(req.RoomID), serialzed); err != nil {
-		log.Println("output produce error:", err)
-		h.producer.Abort(h.ctx)
+	if err := h.producer.Produce(&baseKafka.Message{
+		TopicPartition: baseKafka.TopicPartition{
+			Topic:     &topic,
+			Partition: baseKafka.PartitionAny,
+		},
+		Key:   []byte(req.RoomID),
+		Value: serialzed,
+	}, deliveryChan); err != nil {
 		errMessage := fmt.Sprintf("failed to produce a raw message transaction: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": errMessage})
 		return
 	}
 
-	c.JSON(202, gin.H{
-		"status": "accepted",
+	select {
+	case e := <-deliveryChan:
+		m := e.(*kafka.Message)
+		if m.TopicPartition.Error != nil {
+			log.Println("delivery failed:", m.TopicPartition.Error)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "message delivery failed"})
+			return
+		}
+		log.Printf("message delivered to %s[%d]@%d\n",
+			*m.TopicPartition.Topic,
+			m.TopicPartition.Partition,
+			m.TopicPartition.Offset,
+		)
+	case <-c.Done():
+		log.Println("delivery timeout")
+		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "message delivery timeout"})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{
+		"status":     "accepted",
+		"message_id": event.MessageID,
 	})
 }

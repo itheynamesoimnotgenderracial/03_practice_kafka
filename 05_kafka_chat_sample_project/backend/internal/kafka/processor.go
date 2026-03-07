@@ -36,6 +36,12 @@ func RunProcessor(
 			continue
 		}
 
+		log.Printf("received message from %s[%d]@%d\n",
+			*msg.TopicPartition.Topic,
+			msg.TopicPartition.Partition,
+			msg.TopicPartition.Offset,
+		)
+
 		if err := producer.Begin(); err != nil {
 			log.Println("begin tx error:", err)
 			continue
@@ -57,7 +63,21 @@ func RunProcessor(
 			}
 		}
 
-		err = producer.producer.SendOffsetsToTransaction(ctx, []kafka.TopicPartition{msg.TopicPartition}, &kafka.ConsumerGroupMetadata{})
+		consumerMetadata, err := consumer.GetConsumerGroupMetadata()
+		if err != nil {
+			log.Println("failed to get consumer group metadata:", err)
+			producer.Abort(ctx)
+			continue
+		}
+
+		offsetsToCommit := []kafka.TopicPartition{
+			{
+				Topic:     msg.TopicPartition.Topic,
+				Partition: msg.TopicPartition.Partition,
+				Offset:    msg.TopicPartition.Offset + 1,
+			},
+		}
+		err = producer.producer.SendOffsetsToTransaction(ctx, offsetsToCommit, consumerMetadata)
 		if err != nil {
 			log.Println("error in SendOffsetsToTransaction:", err)
 			producer.Abort(ctx)
@@ -68,5 +88,7 @@ func RunProcessor(
 			log.Println("commit failed:", err)
 			continue
 		}
+
+		log.Printf("transaction committed — produced %d message(s)\n", len(outputs))
 	}
 }

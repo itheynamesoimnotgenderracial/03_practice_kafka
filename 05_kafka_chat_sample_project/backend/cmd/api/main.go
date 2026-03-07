@@ -6,8 +6,8 @@ import (
 	"sample-chat/cmd/api/handlers"
 	"sample-chat/cmd/api/repository"
 	"sample-chat/cmd/utils"
-	"sample-chat/internal/kafka"
 
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde/avro"
@@ -22,7 +22,7 @@ var (
 
 func main() {
 	mongoURI := utils.GetEnv("MONGO_URI", "mongodb://mongo:27017")
-	brokers := utils.GetEnv("KAFA_BROKERS", "kafka1:29092")
+	brokers := utils.GetEnv("KAFKA_BROKERS", "kafka1:29092")
 	schemaRegistryURL := utils.GetEnv("SCHEMA_REGISTRY_URL", "http://schema-registry:8081")
 
 	ctx := context.Background()
@@ -35,10 +35,14 @@ func main() {
 
 	collection := client.Database("chat")
 	repo := repository.NewMessageRepository(collection)
-	producerCfg := kafka.NewProducerConfig(brokers, transactionID)
-	txProducer, err := kafka.NewTxProducer(producerCfg)
+
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers":  brokers,
+		"enable.idempotence": true,
+		"acks":               "all",
+	})
 	if err != nil {
-		log.Fatal("failed to create a transaction producer in api:", err)
+		log.Fatal("failed to create kafka producer:", err)
 	}
 
 	srClient, err := schemaregistry.NewClient(schemaregistry.NewConfig(schemaRegistryURL))
@@ -55,20 +59,38 @@ func main() {
 		var err error
 
 		cancel()
-		txProducerErr := txProducer.Abort(ctx)
-		txCommitErr := txProducer.Commit(ctx)
+		producer.Close()
+		clientDisconnectErr := client.Disconnect(ctx)
+		serializationErr := serializer.Close()
 
-		if txProducerErr != nil {
-			err = txProducerErr
-		} else {
-			err = txCommitErr
+		if clientDisconnectErr != nil {
+			err = clientDisconnectErr
+		} else if serializationErr != nil {
+			err = serializationErr
 		}
 
 		if err != nil {
 			log.Fatal("error in closing defer txProducer", err)
 		}
 	}()
-	messageHandler := handlers.NewMessageHandler(repo, txProducer, serializer, ctx)
+
+	go func() {
+		for e := range producer.Events() {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					log.Println("delivery failed:", ev.TopicPartition.Error)
+				} else {
+					log.Println(
+						*ev.TopicPartition.Topic,
+						ev.TopicPartition.Partition,
+						ev.TopicPartition.Offset,
+					)
+				}
+			}
+		}
+	}()
+	messageHandler := handlers.NewMessageHandler(repo, producer, serializer, ctx)
 
 	router := gin.Default()
 	api := router.Group("/api")
