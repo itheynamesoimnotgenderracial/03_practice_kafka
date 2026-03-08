@@ -22,13 +22,13 @@ type ChatRawEvent struct {
 }
 
 type ChatValidatedEvent struct {
-	MessageID   string `json:"message_id"`
-	RoomID      string `json:"room_id"`
-	UserID      string `json:"user_id"`
-	Content     string `json:"content"`
-	Sanitized   bool   `json:"sanitized"`
-	Timestamp   int64  `json:"timestamp"`
-	ValidatedAt int64  `json:"validated_at"`
+	MessageID   string `json:"message_id" avro:"message_id" bson:"message_id"`
+	RoomID      string `json:"room_id" avro:"room_id" bson:"room_id"`
+	UserID      string `json:"user_id" avro:"user_id" bson:"user_id"`
+	Content     string `json:"content" avro:"content" bson:"content"`
+	Sanitized   bool   `json:"sanitized" avro:"sanitized" bson:"sanitized"`
+	Timestamp   int64  `json:"timestamp" avro:"timestamp" bson:"timestamp"`
+	ValidatedAt int64  `json:"validated_at" avro:"validated_at" bson:"validated_at"`
 }
 
 type ChatDLTEvent struct {
@@ -39,6 +39,15 @@ type ChatDLTEvent struct {
 	Timestamp int64  `json:"timestamp"`
 	Reason    string `json:"reason"`
 	FailedAt  int64  `json:"failed_at"`
+}
+
+type ChatTimelineEvent struct {
+	MessageID string `avro:"message_id" json:"message_id" bson:"message_id"`
+	RoomID    string `avro:"room_id" json:"room_id" bson:"room_id"`
+	UserID    string `avro:"user_id" json:"user_id" bson:"user_id"`
+	Content   string `avro:"content" json:"content" bson:"content"`
+	Sequence  int64  `avro:"sequence" json:"sequence" bson:"sequence"`
+	Timestamp int64  `avro:"timestamp" json:"timestamp" bson:"timestamp"`
 }
 
 func ChatValidationHandler(

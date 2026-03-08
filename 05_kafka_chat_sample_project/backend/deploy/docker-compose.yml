@@ -217,6 +217,24 @@ services:
     networks:
       - kafka-net
 
+  timeline-processor:
+    container_name: timeline-processor
+    build:
+      context: ..
+      dockerfile: docker/timeline-processor.Dockerfile
+    environment:
+      KAFKA_BROKERS: kafka1:29092,kafka2:29092,kafka3:29092
+      MONGO_URI: mongodb://mongo:27017
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - mongo
+      - schema-registry
+    networks:
+      - kafka-net
+
   nginx:
     image: nginx:latest
     container_name: nginx

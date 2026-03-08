@@ -114,7 +114,7 @@ func main() {
 
 			// Hourly Aggregate
 			hourlyWindowStart, _ := handler.ComputeHourlyWindow(event.Timestamp)
-			dailyWindowStart, _ := handler.ComputeDailylyWindow(event.Timestamp)
+			dailyWindowStart, _ := handler.ComputeDailyWindow(event.Timestamp)
 
 			processWindow(
 				ctx,
