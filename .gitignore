@@ -9,3 +9,4 @@
 05_kafka_chat_sample_project/hoboslack/node_modules
 05_kafka_chat_sample_project/hoboslack/*.env
 05_kafka_chat_sample_project/hoboslack/.content-collections
+05_kafka_chat_sample_project/backend/CLAUDE.md
