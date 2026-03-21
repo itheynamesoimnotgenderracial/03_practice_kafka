@@ -26,8 +26,8 @@ export const getMessages = createServerFn({method: "GET"})
         if(data.before !== undefined) {
             params.set("before", String(data.before))
         }
-
-        const res = await fetch(`${API_BASE_URL}/api/messages?${params.toString()}`)
+        console.log(" getMessages API_BASE_URL", API_BASE_URL)
+        const res = await fetch(`${API_BASE_URL}api/messages?${params.toString()}`)
 
         if(!res.ok) {
             throw new Error(`Failed to fetch messages: ${res.status} ${res.statusText}`)
@@ -41,7 +41,8 @@ export const getMessages = createServerFn({method: "GET"})
 export const sendMessage = createServerFn({ method: "POST" })
     .inputValidator(sendMessageSchema)
     .handler(async ({ data }) => {
-    const res = await fetch(`${API_BASE_URL}/api/messages`, {
+        console.log(" sendMessage API_BASE_URL", API_BASE_URL)
+    const res = await fetch(`${API_BASE_URL}api/messages`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

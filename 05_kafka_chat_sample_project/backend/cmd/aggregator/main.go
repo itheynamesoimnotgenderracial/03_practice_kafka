@@ -17,6 +17,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde/avro"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -88,7 +89,12 @@ func main() {
 		log.Fatal("failed to connect to mongoDB:", err)
 	}
 
-	collection := client.Database("chat").Collection("room_metrics")
+	db := client.Database("chat")
+	metricCollection := db.Collection("room_metrics")
+	messageCollection := db.Collection("chat_messages")
+
+	// Ensure indexes on chat_messages for efficient queries
+	ensureMessageIndexes(ctx, messageCollection)
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr: redisAddr,
@@ -135,13 +141,15 @@ func main() {
 				}
 			}
 
+			persistMessage(ctx, messageCollection, event)
+
 			// Hourly Aggregate
 			hourlyWindowStart, _ := handler.ComputeHourlyWindow(event.Timestamp)
 			dailyWindowStart, _ := handler.ComputeDailyWindow(event.Timestamp)
 
 			processWindow(
 				ctx,
-				collection,
+				metricCollection,
 				producer,
 				leaderboardSerializer,
 				event,
@@ -151,7 +159,7 @@ func main() {
 
 			processWindow(
 				ctx,
-				collection,
+				metricCollection,
 				producer,
 				leaderboardSerializer,
 				event,
@@ -237,4 +245,44 @@ func processWindow(
 		return
 	}
 	fmt.Printf("Done processing %s data✅\n", windowType)
+}
+
+func ensureMessageIndexes(ctx context.Context, col *mongo.Collection) {
+	indexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "room_id", Value: 1},
+				{Key: "sequence", Value: -1},
+			},
+		},
+		{
+			Keys:    bson.D{{Key: "message_id", Value: 1}},
+			Options: options.Index().SetUnique(true),
+		},
+	}
+
+	_, err := col.Indexes().CreateMany(ctx, indexes)
+	if err != nil {
+		log.Println("Index creation skipped (may already exist:)", err)
+	}
+}
+
+func persistMessage(ctx context.Context, col *mongo.Collection, event ChatTimelineEvent) {
+	filter := bson.M{"message_id": event.MessageID}
+	update := bson.M{
+		"$setOnInsert": bson.M{
+			"message_id": event.MessageID,
+			"room_id":    event.RoomID,
+			"user_id":    event.UserID,
+			"content":    event.Content,
+			"sequence":   event.Sequence,
+			"timestamp":  event.Timestamp,
+		},
+	}
+	opts := options.Update().SetUpsert(true)
+
+	_, err := col.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		log.Println("Failed to persist message:", err)
+	}
 }
