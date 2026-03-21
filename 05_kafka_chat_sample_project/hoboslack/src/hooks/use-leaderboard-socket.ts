@@ -18,6 +18,7 @@ export function useLeaderboardSocket({
     windowType,
     enabled = true
 }: UseLeaderboardSocketOptions) {
+    console.log("asdasdasd =-===>", `${WS_LEADERBOARD_BASE_URL}/ws/${windowType}`)
     const url = `${WS_LEADERBOARD_BASE_URL}/ws/${windowType}`
 
     const handleMessage = useCallback((data: string) => {
