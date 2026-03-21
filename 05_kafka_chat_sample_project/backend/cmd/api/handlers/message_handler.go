@@ -86,7 +86,6 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 	}
 
 	userID := c.GetHeader("user_id")
-	fmt.Println("user id ===========>", userID)
 	event := pkgmodels.ChatRawEvent{
 		MessageID: uuid.New().String(),
 		RoomID:    req.RoomID,

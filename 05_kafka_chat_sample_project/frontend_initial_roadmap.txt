@@ -1,0 +1,8 @@
+Here's the order I'd suggest building them:
+
+Step 1: WebSocket hook + constants (base URL config)
+Step 2: Chat API functions + TanStack Query hooks
+Step 3: Room list page with live leaderboard
+Step 4: Chat room page with message history (infinite scroll)
+Step 5: Message input with optimistic send
+Step 6: Real-time incoming messages via WebSocket

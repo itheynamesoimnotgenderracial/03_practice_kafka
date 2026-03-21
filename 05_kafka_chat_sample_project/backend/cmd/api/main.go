@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"sample-chat/cmd/api/handlers"
 	"sample-chat/cmd/api/repository"
+	"sample-chat/cmd/api/ws"
 	"sample-chat/cmd/utils"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
@@ -12,18 +14,23 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde/avro"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var (
-	transactionID = "chat-raw-1"
-)
+var wsUpgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func main() {
 	mongoURI := utils.GetEnv("MONGO_URI", "mongodb://mongo:27017")
 	brokers := utils.GetEnv("KAFKA_BROKERS", "kafka1:29092")
 	schemaRegistryURL := utils.GetEnv("SCHEMA_REGISTRY_URL", "http://schema-registry:8081")
+	redisAddr := utils.GetEnv("REDIS_ADDR", "redis:6379")
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -55,11 +62,18 @@ func main() {
 		log.Fatal("failed to create avro serializer for leader board:", err)
 	}
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+
+	roomManager := ws.NewRoomManager(rdb)
+
 	defer func() {
 		var err error
 
 		cancel()
 		producer.Close()
+		redisClostErr := rdb.Close()
 		clientDisconnectErr := client.Disconnect(ctx)
 		serializationErr := serializer.Close()
 
@@ -67,10 +81,12 @@ func main() {
 			err = clientDisconnectErr
 		} else if serializationErr != nil {
 			err = serializationErr
+		} else if redisClostErr != nil {
+			err = redisClostErr
 		}
 
 		if err != nil {
-			log.Fatal("error in closing defer txProducer", err)
+			log.Fatal("error in closing api service defer errors", err)
 		}
 	}()
 
@@ -96,5 +112,26 @@ func main() {
 	api := router.Group("/api")
 	api.GET("/messages", messageHandler.GetMessages)
 	api.POST("/messages", messageHandler.SendMessage)
+
+	router.GET("/ws/rooms/:roomId", func(ctx *gin.Context) {
+		roomID := ctx.Param("roomId")
+		if roomID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "roomId is required"})
+			return
+		}
+
+		conn, err := wsUpgrader.Upgrade(ctx.Writer, ctx.Request, nil)
+		if err != nil {
+			log.Println("Websocket upgrade error:", err)
+			return
+		}
+
+		hub := roomManager.GetOrCreateHub(roomID)
+		ws.ServeWs(hub, conn)
+	})
+
+	log.Println("🚀 API server running on :8083")
+	log.Println("  REST: /api/messages")
+	log.Println("  WS:   /ws/rooms/:roomId")
 	router.Run(":8083")
 }
