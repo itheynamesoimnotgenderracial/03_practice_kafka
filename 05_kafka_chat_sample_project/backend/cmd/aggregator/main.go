@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry/serde/avro"
+	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -23,6 +25,7 @@ func main() {
 	brokers := utils.GetEnv("KAFKA_BROKERS", "kafka1:29092")
 	mongoURI := utils.GetEnv("MONGO_URI", "mongodb://mongo:27017")
 	schemaRegistryURL := utils.GetEnv("SCHEMA_REGISTRY_URL", "http://schema-registry:8081")
+	redisAddr := utils.GetEnv("REDIS_ADDR", "redis:6379")
 	ctx := context.Background()
 
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
@@ -87,6 +90,16 @@ func main() {
 
 	collection := client.Database("chat").Collection("room_metrics")
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+	defer func() {
+		err = rdb.Close()
+		if err != nil {
+			log.Fatal("failed at closing redis aggregator connection:")
+		}
+	}()
+
 	// Graceful shutdown
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
@@ -110,6 +123,16 @@ func main() {
 			if err != nil {
 				log.Println("Failed to deserialize avro:", err)
 				continue
+			}
+
+			roomPayload, err := json.Marshal(event)
+			if err != nil {
+				log.Println("Failed to marshal event for room fan-out:", err)
+			} else {
+				channel := fmt.Sprintf("chat_room:%s", event.RoomID)
+				if pubErr := rdb.Publish(ctx, channel, roomPayload).Err(); pubErr != nil {
+					log.Println("Failed to publish to room channel:", pubErr)
+				}
 			}
 
 			// Hourly Aggregate

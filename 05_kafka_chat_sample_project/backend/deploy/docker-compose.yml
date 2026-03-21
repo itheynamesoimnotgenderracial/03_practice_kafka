@@ -135,6 +135,7 @@ services:
     environment:
       KAFKA_BROKERS: kafka1:29092,kafka2:29092,kafka3:29092
       KAFKA_TOPIC: raw-user-events
+      REDIS_ADDR: redis:6379
     depends_on:
       - kafka1
       - kafka2
@@ -167,6 +168,7 @@ services:
       KAFKA_BROKERS: kafka1:29092,kafka2:29092,kafka3:29092
       MONGO_URI: mongodb://mongo:27017
       SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      REDIS_ADDR: redis:6379
     depends_on:
       - kafka1
       - kafka2

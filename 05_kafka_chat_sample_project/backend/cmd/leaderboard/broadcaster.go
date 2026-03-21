@@ -16,7 +16,8 @@ func StartBroadcaster(ctx context.Context, redis *RedisClientStore) {
 			log.Println("🛑 Broadcaster stopped")
 			return
 		case <-ticker.C:
-			redis.Client.Publish(ctx, "leaderboard_updates", "refresh")
+			redis.Client.Publish(ctx, "leaderboard_updates:hourly", "refresh")
+			redis.Client.Publish(ctx, "leaderboard_updates:daily", "refresh")
 		}
 	}
 }
