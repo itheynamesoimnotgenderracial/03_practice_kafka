@@ -74,12 +74,13 @@ func StartKafkaConsumer(ctx context.Context, redis *RedisClientStore) {
 				continue
 			}
 
-			if err := redis.UpdateScore(ctx, event.RoomID, event.TotalMessages); err != nil {
+			windowType := event.WindowType
+			if err := redis.UpdateScore(ctx, event.RoomID, event.TotalMessages, windowType); err != nil {
 				log.Println("leaderboard redis update error:", err)
 				continue
 			}
 
-			top, err := redis.GetTopN(ctx, 10)
+			top, err := redis.GetTopN(ctx, 10, windowType)
 			if err != nil {
 				log.Println("redis fetch error:", err)
 				continue
@@ -91,13 +92,13 @@ func StartKafkaConsumer(ctx context.Context, redis *RedisClientStore) {
 				continue
 			}
 
-			err = redis.PublishLeaderboard(ctx, payload)
+			err = redis.PublishLeaderboard(ctx, payload, windowType)
 			if err != nil {
 				log.Println("failed in publishing leaderboard:", err)
 				continue
 			}
 
-			log.Println("🚀 Leaderboard updated and published")
+			log.Printf("🚀 Leaderboard updated [%s] for room %s\n", windowType, event.RoomID)
 		}
 	}
 }
