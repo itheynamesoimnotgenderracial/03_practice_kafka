@@ -14,7 +14,6 @@ var upgrader = websocket.Upgrader{
 		return true
 	},
 }
-var clients = make(map[*websocket.Conn]bool)
 
 func StartWebsocketServer(ctx context.Context, redis *RedisClientStore) {
 	hourlyHub := NewHub()
