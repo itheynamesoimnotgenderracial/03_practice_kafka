@@ -33,6 +33,12 @@ func main() {
 		StartWebsocketServer(ctx, redis)
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		StartBroadcaster(ctx, redis)
+	}()
+
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 

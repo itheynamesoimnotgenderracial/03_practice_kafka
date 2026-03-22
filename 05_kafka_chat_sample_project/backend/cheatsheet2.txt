@@ -4,3 +4,7 @@ docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic chat.time
 docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic chat.leaderboard --partitions 6 --replication-factor 3 --config min.insync.replicas=2 --bootstrap-server kafka1:29092 \
 docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic processed-chat-events --partitions 6 --replication-factor 3 --config min.insync.replicas=2 --bootstrap-server kafka1:29092 \
 docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic chat.raw.dlt --partitions 6 --replication-factor 3 --config min.insync.replicas=2 --bootstrap-server kafka1:29092
+
+
+// Test individual integration
+go test ./tests/integration/ -v -count=1 -run TestConsumerCrashAndRebalance -timeout 5m
