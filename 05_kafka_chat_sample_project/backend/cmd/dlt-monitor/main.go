@@ -35,7 +35,7 @@ func main() {
 		"auto.offset-reset": "earliest",
 	})
 	if err != nil {
-		log.Fatal("failed to subscribe to DLT topic:", err)
+		log.Fatal("failed to create consumer to DLT topic:", err)
 	}
 
 	// ─── MongoDB connection ───
