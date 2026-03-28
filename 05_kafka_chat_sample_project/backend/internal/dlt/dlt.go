@@ -39,15 +39,15 @@ type DLTEvent struct {
 	OriginalTopic string `bson:"original_topic" json:"original_topic"`
 	ErrorType     string `bson:"error_type" json:"error_type"`
 	FailureReason string `bson:"failure_reason" json:"failure_reason"`
-	RetryCount    int    `bson:"retry_count" json:"retry_count"`
 	RawPayload    string `bson:"raw_payload" json:"raw_payload"` // base64 or JSON string of original value
 	Key           string `bson:"key" json:"key"`
-	Partition     int32  `bson:"partition" json:"partition"`
+	RetryCount    int    `bson:"retry_count" json:"retry_count"`
 	Offset        int64  `bson:"offset" json:"offset"`
 	FailedAt      int64  `bson:"failed_at" json:"failed_at"`
 	CreatedAt     int64  `bson:"created_at" json:"created_at"`
-	Replayed      bool   `bson:"replayed" json:"replayed"`
 	ReplayedAt    int64  `bson:"replayed_at,omitempty" json:"replayed_at,omitempty"`
+	Replayed      bool   `bson:"replayed" json:"replayed"`
+	Partition     int32  `bson:"partition" json:"partition"`
 }
 
 // ─── Internal Helpers ───
