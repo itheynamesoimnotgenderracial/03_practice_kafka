@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
+	"sample-chat/internal/dlt"
 	"sample-chat/internal/kafka"
 	"strings"
 	"time"
@@ -59,21 +59,34 @@ func ChatValidationHandler(
 
 		err := deserializer.DeserializeInto("chat.raw-value", msg.Value, &raw)
 		if err != nil {
-			dlt := ChatDLTEvent{
-				MessageID: "",
-				RoomID:    "",
-				UserID:    "",
-				Content:   "",
-				Timestamp: 0,
-				Reason:    fmt.Sprintf("deserialization failed: %v\n", err),
-				FailedAt:  time.Now().UnixMilli(),
-			}
-			dltBytes, _ := json.Marshal(dlt)
+			destTopic, retryCount := dlt.RouteToRetryOrDLT(msg, dlt.ErrorTypeDeserialization)
+			failMsg := dlt.BuildFailureMessage(
+				msg,
+				destTopic,
+				retryCount,
+				fmt.Sprintf("deserialization failed: %v\n", err),
+				dlt.ErrorTypeDeserialization,
+				"",
+			)
 			return []kafka.ProducerMessage{{
-				Topic: "chat.raw.dlt",
-				Key:   msg.Key,
-				Value: dltBytes,
+				Topic:   destTopic,
+				Key:     failMsg.Key,
+				Value:   failMsg.Value,
+				Headers: failMsg.Headers,
 			}}, nil
+
+			// DONT DELETE!!!
+			// temporary — force transient error for testing
+			// ================ **** ================
+			// return []kafka.ProducerMessage{{
+			// 	Topic: dlt.TopicChatRawRetry,
+			// 	Key:   msg.Key,
+			// 	Value: msg.Value,
+			// 	Headers: dlt.BuildFailureMessage(msg, dlt.TopicChatRawRetry,
+			// 		dlt.GetRetryCount(msg)+1,
+			// 		"simulated transient error",
+			// 		dlt.ErrorTypeTransient, "").Headers,
+			// }}, nil
 		}
 
 		validationErrors := make([]string, 0, 6)
@@ -99,24 +112,21 @@ func ChatValidationHandler(
 
 		if len(validationErrors) > 0 {
 			reason := strings.Join(validationErrors, "; ")
-			dlt := ChatDLTEvent{
-				MessageID: raw.MessageID,
-				RoomID:    raw.RoomID,
-				UserID:    raw.UserID,
-				Content:   raw.Content,
-				Timestamp: raw.Timestamp,
-				Reason:    reason,
-				FailedAt:  time.Now().UnixMilli(),
-			}
-			dltBytes, err := json.Marshal(dlt)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal DLT event: %w", err)
-			}
+			destTopic, retryCount := dlt.RouteToRetryOrDLT(msg, dlt.ErrorTypeValidation)
+			failMsg := dlt.BuildFailureMessage(
+				msg,
+				destTopic,
+				retryCount,
+				reason,
+				dlt.ErrorTypeValidation,
+				raw.MessageID,
+			)
 
 			return []kafka.ProducerMessage{{
-				Topic: "chat.raw.dlt",
-				Key:   msg.Key,
-				Value: dltBytes,
+				Topic:   destTopic,
+				Key:     failMsg.Key,
+				Value:   failMsg.Value,
+				Headers: failMsg.Headers,
 			}}, nil
 		}
 

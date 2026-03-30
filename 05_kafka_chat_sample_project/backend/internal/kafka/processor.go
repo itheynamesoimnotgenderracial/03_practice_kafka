@@ -11,9 +11,10 @@ import (
 type Handler func(msg *kafka.Message) ([]ProducerMessage, error)
 
 type ProducerMessage struct {
-	Topic string
-	Key   []byte
-	Value []byte
+	Topic   string
+	Key     []byte
+	Value   []byte
+	Headers []kafka.Header
 }
 
 func RunProcessor(
@@ -55,7 +56,7 @@ func RunProcessor(
 		}
 
 		for _, out := range outputs {
-			err := producer.Produce(out.Topic, out.Key, out.Value)
+			err := producer.Produce(out.Topic, out.Key, out.Value, out.Headers)
 			if err != nil {
 				log.Println("output produce error:", err)
 				producer.Abort(ctx)
@@ -86,6 +87,10 @@ func RunProcessor(
 
 		if err := producer.Commit(ctx); err != nil {
 			log.Println("commit failed:", err)
+
+			if abortErr := producer.Abort(ctx); abortErr != nil {
+				log.Fatalf("abort after commit failure also failed: %v — restarting", abortErr)
+			}
 			continue
 		}
 

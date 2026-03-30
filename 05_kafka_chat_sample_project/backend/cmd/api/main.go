@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"sample-chat/cmd/api/dltapi"
 	"sample-chat/cmd/api/handlers"
 	"sample-chat/cmd/api/repository"
 	"sample-chat/cmd/api/ws"
@@ -107,9 +108,10 @@ func main() {
 		}
 	}()
 	messageHandler := handlers.NewMessageHandler(repo, producer, serializer, ctx)
-
+	dltHandler := dltapi.NewDLTHandler(collection, producer)
 	router := gin.Default()
 	api := router.Group("/api")
+	dltHandler.RegisterRoutes(api)
 	api.GET("/messages", messageHandler.GetMessages)
 	api.POST("/messages", messageHandler.SendMessage)
 

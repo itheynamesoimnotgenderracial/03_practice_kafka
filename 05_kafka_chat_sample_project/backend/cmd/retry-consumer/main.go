@@ -53,7 +53,16 @@ func main() {
 		for e := range producer.Events() {
 			switch ev := e.(type) {
 			case *kafka.Message:
-				log.Printf("Retry delivery failed: %v", ev.TopicPartition)
+				if ev.TopicPartition.Error != nil {
+					log.Printf("❌ Retry delivery failed: %v — error: %v", ev.TopicPartition, ev.TopicPartition.Error)
+				} else {
+
+				}
+				fmt.Printf("✅ Retry delivered to %s[%d]@%d\n",
+					*ev.TopicPartition.Topic,
+					ev.TopicPartition.Partition,
+					ev.TopicPartition.Offset,
+				)
 			}
 		}
 	}()
@@ -88,9 +97,15 @@ func processRetryMessage(producer *kafka.Producer, msg *kafka.Message) {
 
 	fmt.Printf("🔄 Processing retry #%d for key=%s reason=%s\n", retryCount, string(msg.Key), reason)
 
+	// Avoid negative shift
+	shift := retryCount
+	if shift < 1 {
+		shift = 1
+	}
+
 	// ─── Exponential backoff delay ───
 	// Calculate delay based on retry count: 5s, 10s, 20s
-	delay := dlt.RetryDelayBase * time.Duration(1<<(retryCount-1))
+	delay := dlt.RetryDelayBase * time.Duration(1<<(shift-1))
 	if delay > 60*time.Second {
 		delay = 60 * time.Second
 	}

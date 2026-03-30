@@ -8,7 +8,7 @@ import (
 
 type TxProducerStore interface {
 	Begin() error
-	Produce(topic string, key, value []byte) error
+	Produce(topic string, key, value []byte, headers []kafka.Header) error
 	Commit(ctx context.Context) error
 	Abort(ctx context.Context) error
 }
@@ -37,14 +37,15 @@ func (p *TxProducer) Begin() error {
 	return p.producer.BeginTransaction()
 }
 
-func (p *TxProducer) Produce(topic string, key, value []byte) error {
+func (p *TxProducer) Produce(topic string, key, value []byte, headers []kafka.Header) error {
 	return p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &topic,
 			Partition: kafka.PartitionAny,
 		},
-		Key:   key,
-		Value: value,
+		Key:     key,
+		Value:   value,
+		Headers: headers,
 	}, nil)
 }
 
