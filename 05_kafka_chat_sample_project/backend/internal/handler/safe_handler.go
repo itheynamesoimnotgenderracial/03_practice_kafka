@@ -72,11 +72,11 @@ func SafeHandlerWithRetry(h func(*kafka.Message) ([]HandlerOutput, error)) func(
 			if r := recover(); r != nil {
 				stack := string(debug.Stack())
 				reason := fmt.Sprintf("panic: %v", r)
-
+				messageID := dlt.GetHeader(msg, dlt.HeaderMessageID)
 				log.Printf("🚨 PANIC RECOVERED: %s\nStack:\n%s", reason, stack)
 
 				destTopic, retryCount := dlt.RouteToRetryOrDLT(msg, dlt.ErrorTypePanic)
-				failMsg := dlt.BuildFailureMessage(msg, destTopic, retryCount, reason, dlt.ErrorTypePanic)
+				failMsg := dlt.BuildFailureMessage(msg, destTopic, retryCount, reason, dlt.ErrorTypePanic, messageID)
 
 				outputs = []HandlerOutput{
 					{

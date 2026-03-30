@@ -31,8 +31,8 @@ func main() {
 	// ─── Kafka consumer for DLT topic ───
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": brokers,
-		"group-id":          "dlt-monitor-group",
-		"auto.offset-reset": "earliest",
+		"group.id":          "dlt-monitor-group",
+		"auto.offset.reset": "earliest",
 	})
 	if err != nil {
 		log.Fatal("failed to create consumer to DLT topic:", err)

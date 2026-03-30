@@ -237,6 +237,39 @@ services:
     networks:
       - kafka-net
 
+  dlt-monitor:
+    build:
+      context: ..
+      dockerfile: docker/dlt-monitor.Dockerfile
+    container_name: dlt-monitor
+    environment:
+      KAFKA_BROKERS: kafka1:29092
+      MONGO_URI: mongodb://mongo:27017
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - mongo
+    networks:
+      - kafka-net
+    restart: unless-stopped
+
+  retry-consumer:
+    container_name: retry-consumer
+    build:
+      context: ..
+      dockerfile: docker/retry-consumer.Dockerfile
+    environment:
+      KAFKA_BROKERS: kafka1:29092
+      MONGO_URI: mongodb://mongo:27017
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    networks:
+      - kafka-net
+    restart: unless-stopped
+
   nginx:
     image: nginx:latest
     container_name: nginx

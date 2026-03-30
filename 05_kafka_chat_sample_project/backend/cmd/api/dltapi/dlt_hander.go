@@ -1,4 +1,4 @@
-package main
+package dltapi
 
 import (
 	"context"
@@ -29,7 +29,10 @@ func NewDLTHandler(db *mongo.Database, producer *kafka.Producer) *DLTAPIHandler 
 
 // RegisterRoutes adds DLT endpoints to a Gin router group.
 func (h *DLTAPIHandler) RegisterRoutes(rg *gin.RouterGroup) {
-	// rg.GET("/dlt",)
+	rg.GET("/dlt", h.ListDLtEvents)
+	rg.GET("/dlt/:messageId", h.GetDLTEvent)
+	rg.POST("/dlt/:messageId/replay", h.ReplayDLTEvent)
+	rg.GET("/dlt/stats", h.GetDLTStats)
 }
 
 // ─── GET /api/dlt ───
@@ -45,9 +48,10 @@ func (h *DLTAPIHandler) ListDLtEvents(c *gin.Context) {
 		filter["error_type"] = errorType
 	}
 	if replayed := c.Query("replayed"); replayed != "" {
-		if replayed == "true" {
+		switch replayed {
+		case "true":
 			filter["replayed"] = true
-		} else if replayed == "false" {
+		case "false":
 			filter["replayed"] = false
 		}
 	}
@@ -213,7 +217,7 @@ func (h *DLTAPIHandler) GetDLTStats(c *gin.Context) {
 	// Total events
 	total, _ := h.collection.CountDocuments(ctx, bson.M{})
 	unreplayed, _ := h.collection.CountDocuments(ctx, bson.M{"replayed": false})
-	replayed, _ := h.collection.CountDocuments(ctx, bson.M{"replayed": false})
+	replayed, _ := h.collection.CountDocuments(ctx, bson.M{"replayed": true})
 
 	// Count by error type
 	pipeline := mongo.Pipeline{
