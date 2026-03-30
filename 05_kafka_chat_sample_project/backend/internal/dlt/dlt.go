@@ -16,6 +16,7 @@ const (
 	HeaderFailureReason = "x-failure-reason"
 	HeaderFailedAt      = "x-failed-at"
 	HeaderErrorType     = "x-error-type"
+	HeaderMessageID     = "x-message-id"
 
 	// Error type classifications
 	ErrorTypeValidation      = "validation"
@@ -102,12 +103,15 @@ func GetRetryCount(msg *kafka.Message) int {
 
 // SetRetryHeaders adds retry metadata headers to a Kafka message
 func SetRetryHeaders(msg *kafka.Message, retryCount int, originalTopic, reason, errorType string) {
+	// extract message_id from payload best-effort
+	messageID := extractMessage(msg.Value)
 	msg.Headers = append(msg.Headers,
 		kafka.Header{Key: HeaderRetryCount, Value: []byte(strconv.Itoa(retryCount))},
 		kafka.Header{Key: HeaderOriginalTopic, Value: []byte(originalTopic)},
 		kafka.Header{Key: HeaderFailureReason, Value: []byte(reason)},
 		kafka.Header{Key: HeaderFailedAt, Value: []byte(strconv.FormatInt(time.Now().UnixMilli(), 10))},
 		kafka.Header{Key: HeaderErrorType, Value: []byte(errorType)},
+		kafka.Header{Key: "x-message-id", Value: []byte(messageID)},
 	)
 }
 
@@ -138,7 +142,7 @@ func RouteToRetryOrDLT(msg *kafka.Message, errorType string) (string, int) {
 
 // BuildFailureMessage creates a new Kafka message destined for either retry or DLT.
 // preserving the original key/value and adding failure metadata headers.
-func BuildFailureMessage(original *kafka.Message, destTopic string, retryCount int, reason, errorType string) *kafka.Message {
+func BuildFailureMessage(original *kafka.Message, destTopic string, retryCount int, reason, errorType, messageID string) *kafka.Message {
 	failMsg := &kafka.Message{
 		TopicPartition: kafka.TopicPartition{
 			Topic:     &destTopic,
@@ -149,6 +153,7 @@ func BuildFailureMessage(original *kafka.Message, destTopic string, retryCount i
 	}
 
 	SetRetryHeaders(failMsg, retryCount, topicName(original), reason, errorType)
+	failMsg.Headers = append(failMsg.Headers, kafka.Header{Key: HeaderMessageID, Value: []byte(messageID)})
 	return failMsg
 }
 
@@ -158,8 +163,8 @@ func BuildFailureMessage(original *kafka.Message, destTopic string, retryCount i
 func NewDLTEventFromMessage(msg *kafka.Message) DLTEvent {
 	now := time.Now().UnixMilli()
 
-	// Try to extract message_id from the payload (best-effort JSON parse)
-	messageID := extractMessage(msg.Value)
+	// Read message_id from header first, fall back to offset-based ID
+	messageID := GetHeader(msg, HeaderMessageID)
 	if messageID == "" {
 		messageID = fmt.Sprintf("unknown-%d-%d", msg.TopicPartition.Partition, msg.TopicPartition.Offset)
 	}
