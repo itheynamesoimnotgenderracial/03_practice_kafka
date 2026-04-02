@@ -2,6 +2,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { getMessages, sendMessage } from "./api";
 import type { ChatMessage, OptimisticMessage, UseSendMessageOptions } from "./type";
 import { useCallback } from "react";
+import { v4 as uuidv4 } from 'uuid'
 
 export const chatKeys = {
     all: ["chat"] as const,
@@ -59,7 +60,8 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
     const queryClient = useQueryClient()
 
     const mutation = useMutation({
-        mutationFn: (content: string) => {
+        mutationFn: (vars: { content: string, tempId: string }) => {
+            const content = vars.content
             return sendMessage({
                 data: {
                     roomId,
@@ -68,7 +70,7 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
                 }
             })
         },
-        onMutate: async({content, tempId}: any) => {
+        onMutate: async({content, tempId}) => {
             // Cancel any in-flight refetches to avoid overwriting our optimistic update
             await queryClient.cancelQueries({queryKey: chatKeys.messages(roomId)})
 
@@ -96,6 +98,8 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
             return { tempId }
         },
         onError: (_err, _vars, context) => {
+            if (!context) return
+
             // Mark the optimistic message as failed instead of removing it
             queryClient.setQueryData(
                 chatKeys.messages(roomId),
@@ -104,7 +108,7 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
 
                     const pages = old.pages.map((page) => page.map((msg) => {
                         const opt = msg as unknown as OptimisticMessage
-                        if (opt._tempId === context?.tempId) {
+                        if (opt._tempId === context.tempId) {
                             return { ...opt, _failed: true } as unknown as ChatMessage
                         }
 
@@ -115,10 +119,23 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
             )
         },
 
-        onSuccess: (result, _vars, context) => {
+        onSuccess: (_result, _vars, context) => {
             if (!context) return
-            // The real message will arrive via websocket broadcast from chat.timeline.
-            // Remove the optimistic placehold - useAppendMessage will add the real one.
+
+            // remove optimistic entry - real message comes via websocket
+            queryClient.setQueryData(
+                chatKeys.messages(roomId),
+                (old: { pages: ChatMessage[][]; pageParams: unknown[] } | undefined) => {
+                    if (!old) return old
+                    const pages = old.pages.map((page) => 
+                        page.filter((msg) => {
+                            const opt = msg as unknown as OptimisticMessage
+                            return opt._tempId !== context.tempId
+                        })
+                    )
+                    return { ...old, pages }
+                }
+            )
             
         }
     })
@@ -126,7 +143,7 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
     const send = useCallback(
         (content: string) => {
             if (content.trim()) {
-                mutation.mutate(content)
+                mutation.mutate({content: content.trim(), tempId: uuidv4()})
             }
         },
         [mutation]
@@ -157,7 +174,10 @@ export function useAppendMessage(roomId: string) {
 
                 const pages = [...oldData.pages]
 
-                const exists = pages.some((page) => page.some((m) => m.message_id === message.message_id))
+                const exists = pages.some((page) => page.some((m) => {
+                    const opt = m as unknown as OptimisticMessage
+                    return m.message_id === message.message_id && !opt._optimistic
+                }))
                 if(exists) return oldData
 
                 if(pages.length > 0) {

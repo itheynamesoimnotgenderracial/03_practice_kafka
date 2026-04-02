@@ -46,7 +46,19 @@ export function MessageItem({ message, isOwn }: MessageItemProps) {
       sx={{
         justifyContent: isOwn ? 'flex-end' : 'flex-start',
         opacity: optimistic ? 0.6 : 1,
-        transition: 'opacity 0.3s ease',
+        transform: optimistic ? "translateY(4px)" : "translateY(0)",
+        transition: 'opacity 0.3s ease, transform 0.3s ease',
+        animation: "messageSlideIn 0.2s ease-out",
+        "@keyframes messageSlideIn": {
+          from: {
+            opacity: 0,
+            transform: "translateY(8px)",
+          },
+          to: {
+            opacity: optimistic ? 0.6 : 1,
+            transform: "translateY(0)"
+          }
+        }
       }}
     >
       {/* Avatar — left side for others */}

@@ -1,19 +1,49 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Box, Paper, Snackbar, Alert } from '@mui/material'
+import { Box, Paper, Snackbar, Alert, CircularProgress, Typography } from '@mui/material'
 import { RoomHeader } from '#/features/chat/components/RoomHeader'
 import { MessageList } from '#/features/chat/components/MessageList'
 import { MessageInput } from '#/features/chat/components/MessageInput'
-import { useMessages, useSendMessage, useAppendMessage } from '#/features/chat/hooks'
+import { useMessages, useSendMessage, useAppendMessage, chatKeys } from '#/features/chat/hooks'
 import { useRoomSocket } from '#/hooks/use-room-socket'
 import { getUserId } from '#/lib/identity'
+import { getMessages } from '#/features/chat'
+import { useMemo } from 'react'
 
 export const Route = createFileRoute('/rooms/$roomId')({
+  loader: async ({ params, context }) => {
+    const { roomId } = params
+
+    await context.queryClient.prefetchInfiniteQuery({
+      queryKey: chatKeys.messages(roomId),
+      queryFn: () => getMessages({ data: { roomId, limit: 30 } }),
+      initialPageParam: undefined,
+      getNextPageParam: (_lastpage, _allPages) => {
+
+      },
+      pages: 1,
+    })
+  },
+  pendingComponent: () => (
+    <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <CircularProgress size={28} sx={{ color: 'primary.main' }} />
+    </Box>
+  ),
+  errorComponent: ({ error }) => (
+    <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2 }}>
+      <Typography variant="body1" sx={{ color: 'error.main' }}>
+        Failed to load room
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+        {error instanceof Error ? error.message : 'Unknown error'}
+      </Typography>
+    </Box>
+  ),
   component: ChatRoom,
 })
 
 function ChatRoom() {
   const { roomId } = Route.useParams()
-  const userId = getUserId()  // ← Chapter 14: stable identity per browser
+  const userId = useMemo(() => getUserId(), [])  // ← Chapter 14: stable identity per browser
 
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } =
     useMessages(roomId)
