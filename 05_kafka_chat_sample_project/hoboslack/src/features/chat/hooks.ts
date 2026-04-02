@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMessages, sendMessage } from "./api";
-import type { ChatMessage, UseSendMessageOptions } from "./type";
+import type { ChatMessage, OptimisticMessage, UseSendMessageOptions } from "./type";
 import { useCallback } from "react";
 
 export const chatKeys = {
@@ -39,11 +39,11 @@ export function useMessages(roomId: string) {
 
 
 export function flattenMessages(
-    pages: ChatMessage[][] | undefined
-): ChatMessage[] {
+    pages: (ChatMessage | OptimisticMessage)[][] | undefined
+): (ChatMessage | OptimisticMessage)[] {
     if (!pages) return []
 
-    const allMessages: ChatMessage[] = []
+    const allMessages: (ChatMessage | OptimisticMessage)[] = []
 
     for (let i = pages.length - 1; i >= 0; --i) {
         const page = pages[i]
@@ -56,6 +56,8 @@ export function flattenMessages(
 }
 
 export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
+    const queryClient = useQueryClient()
+
     const mutation = useMutation({
         mutationFn: (content: string) => {
             return sendMessage({
@@ -66,8 +68,58 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
                 }
             })
         },
-        onError: (error) => {
-            console.error("[useSendMessage] Failed:", error)
+        onMutate: async({content, tempId}: any) => {
+            // Cancel any in-flight refetches to avoid overwriting our optimistic update
+            await queryClient.cancelQueries({queryKey: chatKeys.messages(roomId)})
+
+            const optimistic: OptimisticMessage = {
+                message_id: tempId,
+                _tempId: tempId,
+                _optimistic: true,
+                room_id: roomId,
+                user_id: userId,
+                content: content,
+                sequence: -1,
+                timestamp: Math.floor(Date.now() / 1000)
+            }
+
+            queryClient.setQueryData(
+                chatKeys.messages(roomId),
+                (old: { pages: ChatMessage[][]; pageParams: unknown[] } | undefined) => {
+                    if (!old) return old
+                    const pages = [...old.pages]
+                    pages[0] = [optimistic as unknown as ChatMessage, ...pages[0]]
+                    return { ...old, pages }
+                }
+            )
+
+            return { tempId }
+        },
+        onError: (_err, _vars, context) => {
+            // Mark the optimistic message as failed instead of removing it
+            queryClient.setQueryData(
+                chatKeys.messages(roomId),
+                (old: { pages: ChatMessage[][]; pageParams: unknown[] }) => {
+                    if (!old) return old
+
+                    const pages = old.pages.map((page) => page.map((msg) => {
+                        const opt = msg as unknown as OptimisticMessage
+                        if (opt._tempId === context?.tempId) {
+                            return { ...opt, _failed: true } as unknown as ChatMessage
+                        }
+
+                        return msg
+                    }))
+                    return { ...old, pages }
+                },
+            )
+        },
+
+        onSuccess: (result, _vars, context) => {
+            if (!context) return
+            // The real message will arrive via websocket broadcast from chat.timeline.
+            // Remove the optimistic placehold - useAppendMessage will add the real one.
+            
         }
     })
 

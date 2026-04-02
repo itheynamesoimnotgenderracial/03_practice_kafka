@@ -96,7 +96,7 @@ export function MessageItem({ message, isOwn }: MessageItemProps) {
             variant="caption"
             sx={{ color: 'text.disabled', fontSize: '0.6rem' }}
           >
-            {optimistic ? 'Sending...' : formatTime(message.timestamp)}
+            {optimistic ? (message as OptimisticMessage)._failed ? "⚠ Failed to send" : "Sending..." : formatTime(message.timestamp)}
           </Typography>
         </Stack>
 
@@ -110,9 +110,11 @@ export function MessageItem({ message, isOwn }: MessageItemProps) {
               ? 'rgba(0, 224, 255, 0.10)'
               : glass.surface.elevated,
             backdropFilter: glass.blur.sm,
-            border: `1px solid ${
-              isOwn ? 'rgba(0, 224, 255, 0.20)' : glass.border.default
-            }`,
+            border: isOptimistic(message) && (message as OptimisticMessage)._failed 
+            ? "1px solid rgba(255, 77, 106, 0.5)" 
+            : isOwn 
+              ? "1px solid rgba(0, 224, 255, 0.15)"
+              : `1px solid ${glass.border.subtle}`,
             ...(optimistic && {
               borderStyle: 'dashed',
             }),
