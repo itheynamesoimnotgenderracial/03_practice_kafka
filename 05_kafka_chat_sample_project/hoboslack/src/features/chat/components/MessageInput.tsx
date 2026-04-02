@@ -15,6 +15,7 @@ interface MessageInputProps {
   isError: boolean
   error: Error | null
   onReset: () => void
+  disabled?: boolean  // ← add this
 }
 
 export function MessageInput({
@@ -23,6 +24,7 @@ export function MessageInput({
   isError,
   error,
   onReset,
+  disabled
 }: MessageInputProps) {
   const [value, setValue] = useState('')
 
@@ -104,11 +106,11 @@ export function MessageInput({
           fullWidth
           multiline
           maxRows={4}
-          placeholder="Type a message..."
+          disabled={isPending || !!disabled}
+          placeholder={disabled ? 'Reconnecting...' : 'Type a message...'}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={isPending}
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: '14px',
@@ -118,7 +120,7 @@ export function MessageInput({
         />
         <IconButton
           onClick={handleSend}
-          disabled={!value.trim() || isPending}
+          disabled={!value.trim() || isPending || !!disabled}
           sx={{
             width: 42,
             height: 42,

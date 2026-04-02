@@ -1,57 +1,39 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Box, Paper } from '@mui/material'
+import { Box, Paper, Snackbar, Alert } from '@mui/material'
 import { RoomHeader } from '#/features/chat/components/RoomHeader'
 import { MessageList } from '#/features/chat/components/MessageList'
 import { MessageInput } from '#/features/chat/components/MessageInput'
-import {
-  useMessages,
-  useSendMessage,
-  useAppendMessage,
-} from '#/features/chat/hooks'
+import { useMessages, useSendMessage, useAppendMessage } from '#/features/chat/hooks'
 import { useRoomSocket } from '#/hooks/use-room-socket'
+import { getUserId } from '#/lib/identity'
 
 export const Route = createFileRoute('/rooms/$roomId')({
   component: ChatRoom,
 })
 
-// Temporary user ID — in production this comes from auth
-const USER_ID = 'user-1'
-
 function ChatRoom() {
   const { roomId } = Route.useParams()
+  const userId = getUserId()  // ← Chapter 14: stable identity per browser
 
-  // ── Step 4: Message history with infinite scroll ──
-  const {
-    data,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-    isLoading,
-  } = useMessages(roomId)
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } =
+    useMessages(roomId)
 
-  // ── Step 5: Send messages ──
   const { send, isPending, isError, error, reset } = useSendMessage({
     roomId,
-    userId: USER_ID,
+    userId,
   })
 
-  // ── Step 6: Real-time incoming messages via WebSocket ──
   const appendMessage = useAppendMessage(roomId)
   const { status: wsStatus } = useRoomSocket({
     roomId,
     onMessage: appendMessage,
   })
 
+  // Chapter 15: block send when WS is disconnected
+  const isOffline = wsStatus === 'disconnected'
+
   return (
-    <Box
-      sx={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        maxWidth: 800,
-        mx: 'auto',
-      }}
-    >
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', maxWidth: 800, mx: 'auto' }}>
       <Paper
         sx={{
           flex: 1,
@@ -61,31 +43,39 @@ function ChatRoom() {
           my: { xs: 0, sm: 2 },
           mx: { xs: 0, sm: 2 },
           overflow: 'hidden',
-          minHeight: 0, // critical for flex child scroll
+          minHeight: 0,
         }}
       >
-        {/* Header — Step 4 */}
         <RoomHeader roomId={roomId} wsStatus={wsStatus} />
 
-        {/* Message list — Step 4 (infinite scroll) + Step 6 (live updates) */}
         <MessageList
           pages={data?.pages}
           hasNextPage={hasNextPage ?? false}
           isFetchingNextPage={isFetchingNextPage}
           fetchNextPage={fetchNextPage}
           isLoading={isLoading}
-          userId={USER_ID}
+          userId={userId}
         />
 
-        {/* Input — Step 5 */}
         <MessageInput
           onSend={send}
           isPending={isPending}
           isError={isError}
           error={error}
           onReset={reset}
+          disabled={isOffline}  // ← Chapter 15: disable input when offline
         />
       </Paper>
+
+      {/* Chapter 15: offline notification banner */}
+      <Snackbar
+        open={isOffline}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="warning" sx={{ width: '100%' }}>
+          Disconnected — reconnecting...
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
