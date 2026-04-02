@@ -6,7 +6,7 @@ function generateUserId(): string {
 }
 
 export function getUserId(): string {
-    if(typeof window == undefined) return "server"
+    if(typeof window == "undefined") return "user-anon"
 
     let id = localStorage.getItem(USER_ID_KEY)
     if(!id) {
