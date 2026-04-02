@@ -26,6 +26,7 @@ export type GetMessagesParams = {
 export type OptimisticMessage = ChatMessage & {
     _optimistic: true;
     _tempId: string;
+    _failed?: boolean;
 }
 
 export function isOptimistic(
