@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useMemo } from 'react'
-import { Box, Typography, CircularProgress, Button, Stack } from '@mui/material'
+import { Box, Typography, CircularProgress, Button, Stack, Skeleton } from '@mui/material'
 import {MessageItem} from './MessageItem'
 import { flattenMessages } from '../hooks'
 import type { ChatMessage } from '../type'
@@ -66,20 +66,67 @@ export function MessageList({
       <Box
         sx={{
           flex: 1,
+          overflowY: 'auto',
+          px: 2,
+          py: 2,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 1.5,
         }}
       >
-        <Stack alignItems="center" spacing={2}>
-          <CircularProgress
-            size={28}
-            sx={{ color: 'primary.main' }}
-          />
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Loading messages...
-          </Typography>
-        </Stack>
+        {/* Simulate a mix of own and other messages */}
+        {[
+          { isOwn: false, width: '55%' },
+          { isOwn: false, width: '40%' },
+          { isOwn: true,  width: '45%' },
+          { isOwn: false, width: '60%' },
+          { isOwn: true,  width: '35%' },
+          { isOwn: true,  width: '50%' },
+          { isOwn: false, width: '42%' },
+          { isOwn: true,  width: '38%' },
+        ].map((item, i) => (
+          <Box
+            key={i}
+            sx={{
+              display: 'flex',
+              justifyContent: item.isOwn ? 'flex-end' : 'flex-start',
+              alignItems: 'flex-end',
+              gap: 1,
+            }}
+          >
+            {/* Avatar skeleton for others */}
+            {!item.isOwn && (
+              <Skeleton
+                variant="rounded"
+                width={32}
+                height={32}
+                sx={{ borderRadius: '10px', flexShrink: 0 }}
+              />
+            )}
+
+            {/* Bubble skeleton */}
+            <Box sx={{ maxWidth: '70%', width: item.width }}>
+              {/* Username line for others */}
+              {!item.isOwn && (
+                <Skeleton
+                  variant="text"
+                  width="40%"
+                  sx={{ fontSize: '0.7rem', mb: 0.5 }}
+                />
+              )}
+              <Skeleton
+                variant="rounded"
+                width="100%"
+                height={40}
+                sx={{
+                  borderRadius: item.isOwn
+                    ? '14px 14px 4px 14px'
+                    : '14px 14px 14px 4px',
+                }}
+              />
+            </Box>
+          </Box>
+        ))}
       </Box>
     )
   }
