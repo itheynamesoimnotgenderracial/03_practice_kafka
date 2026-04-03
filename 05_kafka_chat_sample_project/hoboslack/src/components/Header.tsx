@@ -1,7 +1,16 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import ThemeToggle from './ThemeToggle'
+import { clearAuth, getStoredAuth } from '#/lib/auth'
 
 export default function Header() {
+  const navigate = useNavigate()
+  const auth = getStoredAuth()
+
+  function handleLogout() {
+    clearAuth()
+    navigate({ to: "/login" })
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--header-bg)] px-4 backdrop-blur-lg">
       <nav className="page-wrap flex flex-wrap items-center gap-x-3 gap-y-2 py-3 sm:py-4">
@@ -78,6 +87,11 @@ export default function Header() {
           >
             Docs
           </a>
+          {auth && (
+            <button onClick={handleLogout} className="nav-link">
+              Sign out ({auth.username})
+            </button>
+          )}
           <details className="relative w-full sm:w-auto">
             <summary className="nav-link list-none cursor-pointer">
               Demos

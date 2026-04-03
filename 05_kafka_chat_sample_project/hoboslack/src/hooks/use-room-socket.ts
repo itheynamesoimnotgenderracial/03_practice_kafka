@@ -1,4 +1,5 @@
 import type { ChatMessage } from "#/features/chat/type";
+import { getAuthToken } from "#/lib/auth";
 import { WS_CHAT_BASE_URL } from "#/lib/constants";
 import { useWebsocket } from "#/lib/websocket";
 import { useCallback } from "react";
@@ -11,7 +12,8 @@ interface UseRoomSocketOptions {
 }
 
 export function useRoomSocket({ roomId, onMessage, enabled = true }: UseRoomSocketOptions) {
-    const url = `${WS_CHAT_BASE_URL}/ws/rooms/${roomId}`
+    const token = getAuthToken()
+    const url = `${WS_CHAT_BASE_URL}/ws/rooms/${roomId}?token=${token}`
 
     const handleMessage = useCallback((data: string) => {
         try {
