@@ -7,12 +7,14 @@ const getMessageSchema = z.object({
     roomId: z.string().min(1, "roomId is required"),
     limit: z.number().int().positive().optional().default(30),
     before: z.number().int().positive().optional(),
+    token: z.string(),
 })
 
 const sendMessageSchema = z.object({
     roomId: z.string().min(1, "roomId is required"),
     content: z.string().min(1, "content must not be empty").max(4096, "content exceed max-length"),
-    userId: z.string().min(1, "userId is required")
+    userId: z.string().min(1, "userId is required"),
+    token: z.string(),
 })
 
 export const getMessages = createServerFn({method: "GET"})
@@ -26,8 +28,12 @@ export const getMessages = createServerFn({method: "GET"})
         if(data.before !== undefined) {
             params.set("before", String(data.before))
         }
-        console.log(" getMessages API_BASE_URL", API_BASE_URL)
-        const res = await fetch(`${API_BASE_URL}api/messages?${params.toString()}`)
+
+        const res = await fetch(`${API_BASE_URL}api/messages?${params.toString()}`, {
+            headers: {
+                "Authorization": `Bearer ${data.token}`
+            }
+        })
 
         if(!res.ok) {
             throw new Error(`Failed to fetch messages: ${res.status} ${res.statusText}`)
@@ -41,12 +47,11 @@ export const getMessages = createServerFn({method: "GET"})
 export const sendMessage = createServerFn({ method: "POST" })
     .inputValidator(sendMessageSchema)
     .handler(async ({ data }) => {
-        console.log(" sendMessage API_BASE_URL", API_BASE_URL)
     const res = await fetch(`${API_BASE_URL}api/messages`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            user_id: data.userId
+            "Authorization": `Bearer ${data.token}`,
         },
         body: JSON.stringify({
             room_id: data.roomId,

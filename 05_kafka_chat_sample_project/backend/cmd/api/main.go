@@ -9,6 +9,7 @@ import (
 	"sample-chat/cmd/api/repository"
 	"sample-chat/cmd/api/ws"
 	"sample-chat/cmd/utils"
+	"sample-chat/internal/auth"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/confluentinc/confluent-kafka-go/v2/schemaregistry"
@@ -42,6 +43,8 @@ func main() {
 	}
 
 	collection := client.Database("chat")
+	userRepo := auth.NewUserRepository(collection)
+	authHandler := handlers.NewAuthHandler(userRepo)
 	repo := repository.NewMessageRepository(collection)
 
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{
@@ -110,12 +113,41 @@ func main() {
 	messageHandler := handlers.NewMessageHandler(repo, producer, serializer, ctx)
 	dltHandler := dltapi.NewDLTHandler(collection, producer)
 	router := gin.Default()
+	router.Use(func(ctx *gin.Context) {
+		ctx.Header("Access-Control-Allow-Origin", "*")
+		ctx.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		ctx.Header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+		if ctx.Request.Method == "OPTIONS" {
+			ctx.AbortWithStatus(204)
+			return
+		}
+		ctx.Next()
+	})
+
+	// Public routes
+	router.POST("/api/auth/register", authHandler.Register)
+	router.POST("/api/auth/login", authHandler.Login)
+
 	api := router.Group("/api")
-	dltHandler.RegisterRoutes(api)
+	api.Use(auth.AuthMiddleware())
+	api.GET("/auth/me", authHandler.Me)
 	api.GET("/messages", messageHandler.GetMessages)
 	api.POST("/messages", messageHandler.SendMessage)
+	dltHandler.RegisterRoutes(api)
 
 	router.GET("/ws/rooms/:roomId", func(ctx *gin.Context) {
+		tokenStr := ctx.Query("token")
+		if tokenStr == "" {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			return
+		}
+
+		_, _, err := auth.ValidateToken(tokenStr)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
+
 		roomID := ctx.Param("roomId")
 		if roomID == "" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "roomId is required"})

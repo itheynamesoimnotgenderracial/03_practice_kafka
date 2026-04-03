@@ -3,6 +3,7 @@ import { getMessages, sendMessage } from "./api";
 import type { ChatMessage, OptimisticMessage, UseSendMessageOptions } from "./type";
 import { useCallback } from "react";
 import { v4 as uuidv4 } from 'uuid'
+import { getAuthToken } from "#/lib/auth";
 
 export const chatKeys = {
     all: ["chat"] as const,
@@ -20,7 +21,8 @@ export function useMessages(roomId: string) {
                 data: {
                     roomId,
                     limit: PAGE_SIZE,
-                    before: pageParam
+                    before: pageParam,
+                    token: getAuthToken(),
                 }
             })
             return message
@@ -66,7 +68,8 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
                 data: {
                     roomId,
                     content,
-                    userId
+                    userId,
+                    token: getAuthToken(),
                 }
             })
         },

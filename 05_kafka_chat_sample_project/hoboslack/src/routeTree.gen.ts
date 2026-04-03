@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomsIndexRouteImport } from './routes/rooms/index'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as RoomsRoomIdRouteImport } from './routes/rooms/$roomId'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
@@ -46,6 +47,11 @@ const RoomsIndexRoute = RoomsIndexRouteImport.update({
   id: '/rooms/',
   path: '/rooms/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LoginRoute,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
@@ -86,13 +92,14 @@ const DemoFormAddressRoute = DemoFormAddressRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/rss.xml': typeof RssDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/rooms/$roomId': typeof RoomsRoomIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/login/': typeof LoginIndexRoute
   '/rooms/': typeof RoomsIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
@@ -100,13 +107,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/login': typeof LoginRoute
   '/rss.xml': typeof RssDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/rooms/$roomId': typeof RoomsRoomIdRoute
   '/blog': typeof BlogIndexRoute
+  '/login': typeof LoginIndexRoute
   '/rooms': typeof RoomsIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
@@ -115,13 +122,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/rss.xml': typeof RssDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/demo/table': typeof DemoTableRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/rooms/$roomId': typeof RoomsRoomIdRoute
   '/blog/': typeof BlogIndexRoute
+  '/login/': typeof LoginIndexRoute
   '/rooms/': typeof RoomsIndexRoute
   '/demo/form/address': typeof DemoFormAddressRoute
   '/demo/form/simple': typeof DemoFormSimpleRoute
@@ -138,6 +146,7 @@ export interface FileRouteTypes {
     | '/demo/tanstack-query'
     | '/rooms/$roomId'
     | '/blog/'
+    | '/login/'
     | '/rooms/'
     | '/demo/form/address'
     | '/demo/form/simple'
@@ -145,13 +154,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/login'
     | '/rss.xml'
     | '/blog/$slug'
     | '/demo/table'
     | '/demo/tanstack-query'
     | '/rooms/$roomId'
     | '/blog'
+    | '/login'
     | '/rooms'
     | '/demo/form/address'
     | '/demo/form/simple'
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/demo/tanstack-query'
     | '/rooms/$roomId'
     | '/blog/'
+    | '/login/'
     | '/rooms/'
     | '/demo/form/address'
     | '/demo/form/simple'
@@ -174,7 +184,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  LoginRoute: typeof LoginRoute
+  LoginRoute: typeof LoginRouteWithChildren
   RssDotxmlRoute: typeof RssDotxmlRoute
   BlogSlugRoute: typeof BlogSlugRoute
   DemoTableRoute: typeof DemoTableRoute
@@ -222,6 +232,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rooms/'
       preLoaderRoute: typeof RoomsIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof LoginRoute
     }
     '/blog/': {
       id: '/blog/'
@@ -275,10 +292,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface LoginRouteChildren {
+  LoginIndexRoute: typeof LoginIndexRoute
+}
+
+const LoginRouteChildren: LoginRouteChildren = {
+  LoginIndexRoute: LoginIndexRoute,
+}
+
+const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  LoginRoute: LoginRoute,
+  LoginRoute: LoginRouteWithChildren,
   RssDotxmlRoute: RssDotxmlRoute,
   BlogSlugRoute: BlogSlugRoute,
   DemoTableRoute: DemoTableRoute,
