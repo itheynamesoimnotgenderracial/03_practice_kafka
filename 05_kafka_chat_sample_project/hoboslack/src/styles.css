@@ -6,6 +6,20 @@
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
 
+@layer base {
+  html {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 :root {
   --sea-ink: #173a40;
   --sea-ink-soft: #416166;
