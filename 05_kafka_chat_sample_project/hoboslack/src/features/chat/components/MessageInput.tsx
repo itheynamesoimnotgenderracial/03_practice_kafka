@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Box,
   TextField,
@@ -27,12 +27,32 @@ export function MessageInput({
   disabled
 }: MessageInputProps) {
   const [value, setValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-focus on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      inputRef.current?.focus()
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [])
+  
+  useEffect(() => {
+    if(!isPending) {
+      inputRef.current?.focus()
+    }
+  }, [isPending])
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim()
     if (trimmed && !isPending) {
       onSend(trimmed)
       setValue('')
+
+      // Re-focus after clearing so user can type next message immediately
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+      })
     }
   }, [value, isPending, onSend])
 
@@ -117,6 +137,7 @@ export function MessageInput({
               fontSize: '0.875rem',
             },
           }}
+          inputRef={inputRef}
         />
         <IconButton
           onClick={handleSend}

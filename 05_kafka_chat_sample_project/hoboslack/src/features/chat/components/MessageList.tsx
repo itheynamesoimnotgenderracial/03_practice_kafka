@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react'
+import { useRef, useEffect, useCallback, useMemo, useLayoutEffect } from 'react'
 import { Box, Typography, CircularProgress, Button, Stack, Skeleton } from '@mui/material'
 import {MessageItem} from './MessageItem'
 import { flattenMessages } from '../hooks'
@@ -12,6 +12,7 @@ interface MessageListProps {
   fetchNextPage: () => void
   isLoading: boolean
   userId: string
+  justSentRef: React.MutableRefObject<boolean>  // ← add this
 }
 
 export function MessageList({
@@ -21,6 +22,7 @@ export function MessageList({
   fetchNextPage,
   isLoading,
   userId,
+  justSentRef
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -47,7 +49,7 @@ export function MessageList({
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   // Auto-scroll to bottom when new messages arrive (if user was near bottom)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = scrollRef.current
     if (!el || prevScrollHeightRef.current == 0) return
 
@@ -55,10 +57,20 @@ export function MessageList({
     const heightDiff = newScrollHeight - prevScrollHeightRef.current
     
     if(heightDiff > 0) {
-      el.scrollTop != heightDiff
+      el.scrollTop += heightDiff
       prevScrollHeightRef.current = 0
     }
   }, [messages.length])
+
+    useEffect(() => {
+    if (messages.length > prevMessageCountRef.current) {
+      if (isNearBottomRef.current || justSentRef.current) {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        justSentRef.current = false  // reset after consuming
+      }
+    }
+    prevMessageCountRef.current = messages.length
+  }, [messages.length, justSentRef])
 
   // Auto-scroll to bottom when new messages arrives at the bottom
   useEffect(() => {

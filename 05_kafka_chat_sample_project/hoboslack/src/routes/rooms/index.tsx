@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   Box,
@@ -268,171 +268,199 @@ function RoomsIndex() {
     }
   }
 
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const header = document.querySelector('header')
+    const footer = document.querySelector('footer')
+
+    const headerH = header?.getBoundingClientRect().height ?? 0
+    const footerH = footer?.getBoundingClientRect().height ?? 0
+
+    el.style.height = `${window.innerHeight - headerH - footerH}px`
+    el.style.overflowY = 'auto'
+
+    // prevent body/html from also scrolling
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.documentElement.style.overflow = ''
+      document.body.style.overflow = ''
+    }
+  }, [])
+
   return (
-    <Box
-      sx={{
-        maxWidth: 720,
-        mx: 'auto',
-        px: 3,
-        pt: 8,
-        pb: 10,
-      }}
-    >
-      {/* ── HEADER ────────────────────────────────────── */}
-      <Box sx={{ mb: 5 }}>
-        <Chip
-          label="CHAT ROOMS"
-          size="small"
-          color="primary"
-          sx={{ mb: 2 }}
-        />
-        <Typography
-          variant="h2"
-          sx={{
-            fontSize: { xs: '2.2rem', sm: '3rem' },
-            background: 'linear-gradient(135deg, #00E0FF 0%, #8B5CF6 50%, #FF00C8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mb: 1.5,
-          }}
+    <div ref={containerRef}>
+      <Box
+        sx={{
+          maxWidth: 720,
+          mx: 'auto',
+          px: 3,
+          pt: 8,
+          pb: 10,
+        }}
+      >
+        {/* ── HEADER ────────────────────────────────────── */}
+        <Box sx={{ mb: 5 }}
         >
-          Rooms
-        </Typography>
-        <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 540 }}>
-          Join an existing room or create a new one. The leaderboard updates in
-          real time as messages flow through the Kafka pipeline.
-        </Typography>
-      </Box>
-
-      {/* ── JOIN / CREATE ─────────────────────────────── */}
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography
-          variant="subtitle2"
-          sx={{ color: 'primary.main', mb: 2 }}
-        >
-          JOIN OR CREATE
-        </Typography>
-        <Box
-          component="form"
-          onSubmit={handleJoinRoom}
-          sx={{ display: 'flex', gap: 1.5 }}
-        >
-          <TextField
-            fullWidth
-            placeholder="Enter a room name or ID..."
-            value={roomInput}
-            onChange={(e) => setRoomInput(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      bgcolor: 'primary.main',
-                      opacity: 0.5,
-                    }}
-                  />
-                </InputAdornment>
-              ),
-            }}
+          <Chip
+            label="CHAT ROOMS"
+            size="small"
+            color="primary"
+            sx={{ mb: 2 }}
           />
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={!roomInput.trim()}
-            sx={{ whiteSpace: 'nowrap', px: 4 }}
-          >
-            Join Room
-          </Button>
-        </Box>
-      </Paper>
-
-      {/* ── LEADERBOARD ───────────────────────────────── */}
-      <Paper sx={{ p: 3 }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          sx={{ mb: 3 }}
-        >
-          <Box>
-            <Typography
-              variant="subtitle2"
-              sx={{ color: 'primary.main', mb: 0.5 }}
-            >
-              LIVE LEADERBOARD
-            </Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Most active rooms by message count
-            </Typography>
-          </Box>
-          <StatusDot status={activeStatus} />
-        </Stack>
-
-        {/* Tab switcher */}
-        <Tabs
-          value={activeTab}
-          onChange={(_, v) => setActiveTab(v)}
-          sx={{ mb: 3 }}
-        >
-          <Tab label="Daily" />
-          <Tab label="Hourly" />
-        </Tabs>
-
-        {/* Room list */}
-        {activeLeaderboard.length === 0 ? (
-          <Box
+          <Typography
+            variant="h2"
             sx={{
-              py: 8,
-              textAlign: 'center',
+              fontSize: { xs: '2.2rem', sm: '3rem' },
+              background: 'linear-gradient(135deg, #00E0FF 0%, #8B5CF6 50%, #FF00C8 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 1.5,
             }}
           >
+            Rooms
+          </Typography>
+          <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 540 }}>
+            Join an existing room or create a new one. The leaderboard updates in
+            real time as messages flow through the Kafka pipeline.
+          </Typography>
+        </Box>
+
+        {/* ── JOIN / CREATE ─────────────────────────────── */}
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{ color: 'primary.main', mb: 2 }}
+          >
+            JOIN OR CREATE
+          </Typography>
+          <Box
+            component="form"
+            onSubmit={handleJoinRoom}
+            sx={{ display: 'flex', gap: 1.5 }}
+          >
+            <TextField
+              fullWidth
+              placeholder="Enter a room name or ID..."
+              value={roomInput}
+              onChange={(e) => setRoomInput(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: 'primary.main',
+                        opacity: 0.5,
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!roomInput.trim()}
+              sx={{ whiteSpace: 'nowrap', px: 4 }}
+            >
+              Join Room
+            </Button>
+          </Box>
+        </Paper>
+
+        {/* ── LEADERBOARD ───────────────────────────────── */}
+        <Paper sx={{ p: 3 }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ mb: 3 }}
+          >
+            <Box>
+              <Typography
+                variant="subtitle2"
+                sx={{ color: 'primary.main', mb: 0.5 }}
+              >
+                LIVE LEADERBOARD
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Most active rooms by message count
+              </Typography>
+            </Box>
+            <StatusDot status={activeStatus} />
+          </Stack>
+
+          {/* Tab switcher */}
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => setActiveTab(v)}
+            sx={{ mb: 3 }}
+          >
+            <Tab label="Daily" />
+            <Tab label="Hourly" />
+          </Tabs>
+
+          {/* Room list */}
+          {activeLeaderboard.length === 0 ? (
             <Box
               sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                background: glass.surface.elevated,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mx: 'auto',
-                mb: 2,
+                py: 8,
+                textAlign: 'center',
               }}
             >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="rgba(255,255,255,0.3)"
-                strokeWidth={1.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: '50%',
+                  background: glass.surface.elevated,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                  mb: 2,
+                }}
               >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.3)"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                {activeStatus === 'connected'
+                  ? 'No active rooms yet. Send a message to get started!'
+                  : 'Waiting for leaderboard data...'}
+              </Typography>
             </Box>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {activeStatus === 'connected'
-                ? 'No active rooms yet. Send a message to get started!'
-                : 'Waiting for leaderboard data...'}
-            </Typography>
-          </Box>
-        ) : (
-          <Stack spacing={1}>
-            {activeLeaderboard.map((entry, index) => (
-              <LeaderboardRow
-                key={entry.room_id}
-                entry={entry}
-                index={index}
-              />
-            ))}
-          </Stack>
-        )}
-      </Paper>
-    </Box>
+          ) : (
+            <Stack spacing={1}>
+              {activeLeaderboard.map((entry, index) => (
+                <LeaderboardRow
+                  key={entry.room_id}
+                  entry={entry}
+                  index={index}
+                />
+              ))}
+            </Stack>
+          )}
+        </Paper>
+      </Box>
+    </div>
   )
 }

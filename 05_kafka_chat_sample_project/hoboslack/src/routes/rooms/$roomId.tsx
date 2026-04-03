@@ -7,7 +7,7 @@ import { useMessages, useSendMessage, useAppendMessage, chatKeys } from '#/featu
 import { useRoomSocket } from '#/hooks/use-room-socket'
 import { getUserId } from '#/lib/identity'
 import { getMessages } from '#/features/chat'
-import { useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 export const Route = createFileRoute('/rooms/$roomId')({
   loader: async ({ params, context }) => {
@@ -44,6 +44,7 @@ export const Route = createFileRoute('/rooms/$roomId')({
 function ChatRoom() {
   const { roomId } = Route.useParams()
   const userId = useMemo(() => getUserId(), [])  // ← Chapter 14: stable identity per browser
+  const justSentRef = useRef(false)
 
   const { data, hasNextPage, isFetchingNextPage, fetchNextPage, isLoading } =
     useMessages(roomId)
@@ -52,6 +53,12 @@ function ChatRoom() {
     roomId,
     userId,
   })
+
+  // Wrap send to set the flag before firing
+  const handleSend = useCallback((content: string) => {
+    justSentRef.current = true
+    send(content)
+  }, [send])
 
   const appendMessage = useAppendMessage(roomId)
   const { status: wsStatus } = useRoomSocket({
@@ -62,8 +69,28 @@ function ChatRoom() {
   // Chapter 15: block send when WS is disconnected
   const isOffline = wsStatus === 'disconnected'
 
+  // Lock body scroll when chat room is mounted
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+    }
+  }, [])
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', maxWidth: 800, mx: 'auto' }}>
+    <Box 
+      sx={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: 800,
+        width: '100%',
+        mx: 'auto',
+        minHeight: 0,
+        overflow: 'hidden',
+      }}
+    >
       <Paper
         sx={{
           flex: 1,
@@ -85,10 +112,11 @@ function ChatRoom() {
           fetchNextPage={fetchNextPage}
           isLoading={isLoading}
           userId={userId}
+          justSentRef={justSentRef}
         />
 
         <MessageInput
-          onSend={send}
+          onSend={handleSend}
           isPending={isPending}
           isError={isError}
           error={error}

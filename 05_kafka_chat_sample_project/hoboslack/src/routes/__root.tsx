@@ -58,17 +58,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <TanStackQueryProvider>
           <GlassThemeProvider>
             <Header />
+          <main style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+          }}>
             {children}
+          </main>
             <Footer />
             <TanStackDevtools
-              config={{
-                position: 'bottom-right',
-              }}
+              config={{ position: 'bottom-right' }}
               plugins={[
-                {
-                  name: 'Tanstack Router',
-                  render: <TanStackRouterDevtoolsPanel />,
-                },
+                { name: 'Tanstack Router', render: <TanStackRouterDevtoolsPanel /> },
                 TanStackQueryDevtools,
               ]}
             />
