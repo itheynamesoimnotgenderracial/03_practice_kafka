@@ -60,7 +60,8 @@ export function flattenMessages(
 
 export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
     const queryClient = useQueryClient()
-
+    const token = getAuthToken()
+    console.log("useSendMessage ===========>", token)
     const mutation = useMutation({
         mutationFn: (vars: { content: string, tempId: string }) => {
             const content = vars.content
@@ -69,7 +70,7 @@ export function useSendMessage({ roomId, userId }: UseSendMessageOptions) {
                     roomId,
                     content,
                     userId,
-                    token: getAuthToken(),
+                    token,
                 }
             })
         },

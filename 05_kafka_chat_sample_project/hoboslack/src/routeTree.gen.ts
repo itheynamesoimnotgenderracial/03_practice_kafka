@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RssDotxmlRouteImport } from './routes/rss[.]xml'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomsIndexRouteImport } from './routes/rooms/index'
@@ -26,11 +25,6 @@ import { Route as DemoFormAddressRouteImport } from './routes/demo/form.address'
 const RssDotxmlRoute = RssDotxmlRouteImport.update({
   id: '/rss.xml',
   path: '/rss.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -49,9 +43,9 @@ const RoomsIndexRoute = RoomsIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginIndexRoute = LoginIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => LoginRoute,
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
@@ -92,7 +86,6 @@ const DemoFormAddressRoute = DemoFormAddressRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/login': typeof LoginRouteWithChildren
   '/rss.xml': typeof RssDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/demo/table': typeof DemoTableRoute
@@ -122,7 +115,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/login': typeof LoginRouteWithChildren
   '/rss.xml': typeof RssDotxmlRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/demo/table': typeof DemoTableRoute
@@ -139,7 +131,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/login'
     | '/rss.xml'
     | '/blog/$slug'
     | '/demo/table'
@@ -168,7 +159,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
-    | '/login'
     | '/rss.xml'
     | '/blog/$slug'
     | '/demo/table'
@@ -184,13 +174,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  LoginRoute: typeof LoginRouteWithChildren
   RssDotxmlRoute: typeof RssDotxmlRoute
   BlogSlugRoute: typeof BlogSlugRoute
   DemoTableRoute: typeof DemoTableRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   RoomsRoomIdRoute: typeof RoomsRoomIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  LoginIndexRoute: typeof LoginIndexRoute
   RoomsIndexRoute: typeof RoomsIndexRoute
   DemoFormAddressRoute: typeof DemoFormAddressRoute
   DemoFormSimpleRoute: typeof DemoFormSimpleRoute
@@ -203,13 +193,6 @@ declare module '@tanstack/react-router' {
       path: '/rss.xml'
       fullPath: '/rss.xml'
       preLoaderRoute: typeof RssDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -235,10 +218,10 @@ declare module '@tanstack/react-router' {
     }
     '/login/': {
       id: '/login/'
-      path: '/'
+      path: '/login'
       fullPath: '/login/'
       preLoaderRoute: typeof LoginIndexRouteImport
-      parentRoute: typeof LoginRoute
+      parentRoute: typeof rootRouteImport
     }
     '/blog/': {
       id: '/blog/'
@@ -292,26 +275,16 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface LoginRouteChildren {
-  LoginIndexRoute: typeof LoginIndexRoute
-}
-
-const LoginRouteChildren: LoginRouteChildren = {
-  LoginIndexRoute: LoginIndexRoute,
-}
-
-const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  LoginRoute: LoginRouteWithChildren,
   RssDotxmlRoute: RssDotxmlRoute,
   BlogSlugRoute: BlogSlugRoute,
   DemoTableRoute: DemoTableRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   RoomsRoomIdRoute: RoomsRoomIdRoute,
   BlogIndexRoute: BlogIndexRoute,
+  LoginIndexRoute: LoginIndexRoute,
   RoomsIndexRoute: RoomsIndexRoute,
   DemoFormAddressRoute: DemoFormAddressRoute,
   DemoFormSimpleRoute: DemoFormSimpleRoute,
