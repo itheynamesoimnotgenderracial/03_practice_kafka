@@ -33,7 +33,7 @@ function LoginPage() {
       const user = tab === 0
         ? await loginRequest({ data: { username, password } })
         : await registerRequest({ data: { username, password } })
-
+      console.log("login user  ======>", user)
       storeAuth(user as AuthUser)
       navigate({ to: '/rooms' })
     } catch (err) {

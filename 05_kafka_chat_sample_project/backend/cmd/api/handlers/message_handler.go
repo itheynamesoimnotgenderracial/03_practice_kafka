@@ -85,15 +85,15 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetHeader("user_id")
+	userID, _ := c.Get("user_id")
 	event := pkgmodels.ChatRawEvent{
 		MessageID: uuid.New().String(),
 		RoomID:    req.RoomID,
-		UserID:    userID,
+		UserID:    userID.(string),
 		Content:   req.Content,
 		Timestamp: time.Now().UnixMilli(),
 	}
-
+	fmt.Println("event =============>", event)
 	serialzed, err := h.serializer.Serialize("chat.raw-value", &event)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot serialize raw data type"})
