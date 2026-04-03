@@ -136,6 +136,7 @@ services:
       KAFKA_BROKERS: kafka1:29092,kafka2:29092,kafka3:29092
       KAFKA_TOPIC: raw-user-events
       REDIS_ADDR: redis:6379
+      PASETO_SECRET_KEY: "super-secret-32-char-minimum-key!!"
     depends_on:
       - kafka1
       - kafka2

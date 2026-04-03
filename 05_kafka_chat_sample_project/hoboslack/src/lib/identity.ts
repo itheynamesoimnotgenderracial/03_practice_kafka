@@ -1,18 +1,14 @@
-
-const USER_ID_KEY = "chat_user_id";
-
-function generateUserId(): string {
-    return "user-" + Math.random().toString(36).slice(2,9)
-}
+import { getStoredAuth, getAuthToken } from "./auth";
 
 export function getUserId(): string {
     if(typeof window == "undefined") return "user-anon"
-
-    let id = localStorage.getItem(USER_ID_KEY)
-    if(!id) {
-        id = generateUserId()
-        localStorage.setItem(USER_ID_KEY, id)
-    }
-
-    return id
+    return getStoredAuth()?.username ?? "user-anon"
 }
+
+export function getUsername(): string {
+    if (typeof window === "undefined") return "anon"
+    return getStoredAuth()?.username ?? "anon"
+}
+
+export { getAuthToken }
+
