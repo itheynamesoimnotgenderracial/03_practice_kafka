@@ -8,14 +8,16 @@ import { useRoomSocket } from '#/hooks/use-room-socket'
 import { getUserId } from '#/lib/identity'
 import { getMessages } from '#/features/chat'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { getStoredAuth } from '#/lib/auth'
 
 export const Route = createFileRoute('/rooms/$roomId')({
   loader: async ({ params, context }) => {
     const { roomId } = params
-
+    const user = getStoredAuth()
+    console.log("token ==========>", user?.token)
     await context.queryClient.prefetchInfiniteQuery({
       queryKey: chatKeys.messages(roomId),
-      queryFn: () => getMessages({ data: { roomId, limit: 30 } }),
+      queryFn: () => getMessages({ data: { roomId, limit: 30, token: user?.token as string } }),
       initialPageParam: undefined,
       getNextPageParam: (_lastpage, _allPages) => {
 
