@@ -26,6 +26,8 @@ export function MessageList({
   const bottomRef = useRef<HTMLDivElement>(null)
   const isNearBottomRef = useRef(true)
   const prevMessageCountRef = useRef(0)
+  // ── NEW: track scroll height before fetchNextPage so we can restore position ──
+  const prevScrollHeightRef = useRef(0)
 
   const messages = useMemo(() => flattenMessages(pages), [pages])
 
@@ -39,15 +41,30 @@ export function MessageList({
 
     // Load older messages when scrolling near top
     if (el.scrollTop < 60 && hasNextPage && !isFetchingNextPage) {
+      prevScrollHeightRef.current = el.scrollHeight
       fetchNextPage()
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   // Auto-scroll to bottom when new messages arrive (if user was near bottom)
   useEffect(() => {
-    if (messages.length > prevMessageCountRef.current) {
-      if (isNearBottomRef.current) {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = scrollRef.current
+    if (!el || prevScrollHeightRef.current == 0) return
+
+    const newScrollHeight = el.scrollHeight
+    const heightDiff = newScrollHeight - prevScrollHeightRef.current
+    
+    if(heightDiff > 0) {
+      el.scrollTop != heightDiff
+      prevScrollHeightRef.current = 0
+    }
+  }, [messages.length])
+
+  // Auto-scroll to bottom when new messages arrives at the bottom
+  useEffect(() => {
+    if(messages.length > prevMessageCountRef.current) {
+      if(isNearBottomRef.current) {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" })
       }
     }
     prevMessageCountRef.current = messages.length
@@ -199,7 +216,10 @@ export function MessageList({
             <Button
               size="small"
               variant="text"
-              onClick={fetchNextPage}
+              onClick={() => {
+                prevScrollHeightRef.current = scrollRef.current?.scrollHeight ?? 0
+                fetchNextPage()
+              }}
               sx={{
                 fontSize: '0.7rem',
                 color: 'text.secondary',

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	pkgmodels "sample-chat/cmd/pkg-models"
 	"time"
 
@@ -16,9 +17,22 @@ type MessageRepository struct {
 }
 
 func NewMessageRepository(db *mongo.Database) *MessageRepository {
-	return &MessageRepository{
-		collection: db.Collection("chat_messages"),
+	col := db.Collection("chat_messages")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := col.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "room_id", Value: 1},
+			{Key: "sequence", Value: -1},
+		},
+		Options: options.Index().SetName("room_sequence_idx"),
+	})
+	if err != nil {
+		log.Println("chat_messages")
 	}
+	return &MessageRepository{collection: col}
 }
 
 func (r *MessageRepository) GetMessages(
