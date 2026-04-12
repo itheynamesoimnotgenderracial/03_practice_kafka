@@ -1,0 +1,5 @@
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic simple.eos.validator --partitions 6 --replication-factor 3 --config min.insync.replicas=2 --bootstrap-server kafka1:29092 \
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic simple.eos.consumer --partitions 6 --replication-factor 3 --config min.insync.replicas=2 --bootstrap-server kafka1:29092 \
+docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic simple.eos.dlq --partitions 6 --replication-factor 3 --config min.insync.replicas=2 --bootstrap-server kafka1:29092
+// Test individual integration
+go test ./tests/integration/ -v -count=1 -run TestConsumerCrashAndRebalance -timeout 5m

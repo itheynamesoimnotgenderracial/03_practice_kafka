@@ -1,0 +1,50 @@
+{
+  "type": "record",
+  "name": "DLQMessage",
+  "namespace": "com.simple.eos",
+  "doc": "Dead-letter queue envelope wrapping a failed CustomerMessage. Used for simple.eos.dlq-value subject.",
+  "fields": [
+    {
+      "name": "original_payload",
+      "type": {
+        "type": "record",
+        "name": "CustomerMessage",
+        "namespace": "com.simple.eos",
+        "fields": [
+          {"name": "message_id",  "type": "string"},
+          {"name": "customer_id", "type": "string"},
+          {"name": "name",        "type": "string"},
+          {"name": "email",       "type": "string"},
+          {
+            "name": "action",
+            "type": {
+              "type": "enum",
+              "name": "Action",
+              "symbols": ["CREATE", "UPDATE"]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "failed_at_step",
+      "type": "string",
+      "doc": "Pipeline step where the failure occurred, e.g. EXTERNAL_API, DB_SAVE, DESERIALIZATION."
+    },
+    {
+      "name": "reason",
+      "type": "string",
+      "doc": "Human-readable error message."
+    },
+    {
+      "name": "idempotency_key",
+      "type": "string",
+      "doc": "Format: {message_id}::{customer_id}::{action}"
+    },
+    {
+      "name": "retry_count",
+      "type": "long",
+      "doc": "Number of delivery attempts before DLQ. Maps to Go int64."
+    }
+  ]
+}

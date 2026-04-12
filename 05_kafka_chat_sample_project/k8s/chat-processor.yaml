@@ -1,0 +1,38 @@
+apiVersion:
+kind: Deployment
+metadata:
+  name: chat-processor
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    selector:
+      matchLabels:
+        app: chat-processor
+    template:
+      metadata:
+        labels:
+          app: chat-processor
+      spec:
+        containers:
+          - name: chat-processor
+            image: your-registry/chat-processor:latest
+            env:
+              - name: KAFKA_BROKERS
+                valueFrom:
+                  secretKeyRef:
+                    name: kafka-secret
+                    key: brokers
+              - name: SCHEMA_REGISTRY_URL
+                value: http://schema-registry:8081
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "200m"
+              limits:
+                memory: "1Gi"
+                cpu: "1000m"
+        terminationGracePeriodSeconds: 60

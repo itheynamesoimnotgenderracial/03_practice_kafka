@@ -1,0 +1,34 @@
+{
+  "type": "record",
+  "name": "CustomerMessage",
+  "namespace": "com.simple.eos",
+  "doc": "Represents a customer create/update request. Used for both simple.eos.validator-value and simple.eos.consumer-value subjects.",
+  "fields": [
+    {
+      "name": "message_id",
+      "type": "string",
+      "doc": "UUID assigned by the API handler; stable across Kafka redeliveries."
+    },
+    {
+      "name": "customer_id",
+      "type": "string",
+      "doc": "Business key; used as Kafka partition key to guarantee per-customer ordering."
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "email",
+      "type": "string"
+    },
+    {
+      "name": "action",
+      "type": {
+        "type": "enum",
+        "name": "Action",
+        "symbols": ["CREATE", "UPDATE"]
+      }
+    }
+  ]
+}
