@@ -1,0 +1,511 @@
+time="2026-04-11T19:02:23+08:00" level=warning msg="/home/cyrile_lagumbay/personal/practice/kafka/01_practice/06_semi_exactly_one/deploy/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+#1 [internal] load local bake definitions
+#1 reading from stdin 628B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from api.Dockerfile
+#2 transferring dockerfile: 1.16kB done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/golang:1.25-alpine
+#3 DONE 0.8s
+
+#4 [auth] library/alpine:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/alpine:3.20
+#5 DONE 1.8s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 176B done
+#6 DONE 0.0s
+
+#7 [stage-1 1/7] FROM docker.io/library/alpine:3.20@sha256:a4f4213abb84c497377b8544c81b3564f313746700372ec4fe84653e4fb03805
+#7 DONE 0.0s
+
+#8 [builder 1/9] FROM docker.io/library/golang:1.25-alpine@sha256:7a00384194cf2cb68924bbb918d675f1517357433c8541bac0ab2f929b9d5447
+#8 DONE 0.0s
+
+#9 [stage-1 2/7] WORKDIR /app
+#9 CACHED
+
+#10 [builder 2/9] WORKDIR /app
+#10 CACHED
+
+#11 [internal] load build context
+#11 transferring context: 115.98kB 0.1s done
+#11 DONE 0.1s
+
+#12 [builder 3/9] RUN apk add --no-cache     git     build-base     pkgconfig     librdkafka-dev     openssl-dev     zlib-dev     zstd-dev     lz4-dev
+#12 1.239 ( 1/58) Upgrading musl (1.2.5-r21 -> 1.2.5-r23)
+#12 1.276 ( 2/58) Upgrading libcrypto3 (3.5.5-r0 -> 3.5.6-r0)
+#12 1.331 ( 3/58) Upgrading libssl3 (3.5.5-r0 -> 3.5.6-r0)
+#12 1.382 ( 4/58) Upgrading zlib (1.3.1-r2 -> 1.3.2-r0)
+#12 1.416 ( 5/58) Installing libgcc (15.2.0-r2)
+#12 1.449 ( 6/58) Installing jansson (2.14.1-r0)
+#12 1.484 ( 7/58) Installing libstdc++ (15.2.0-r2)
+#12 1.529 ( 8/58) Installing zstd-libs (1.5.7-r2)
+#12 1.567 ( 9/58) Installing binutils (2.45.1-r0)
+#12 1.646 (10/58) Installing libmagic (5.46-r2)
+#12 1.694 (11/58) Installing file (5.46-r2)
+#12 1.728 (12/58) Installing libgomp (15.2.0-r2)
+#12 1.764 (13/58) Installing libatomic (15.2.0-r2)
+#12 1.802 (14/58) Installing gmp (6.3.0-r4)
+#12 ...
+
+#13 [stage-1 3/7] RUN apk add --no-cache     ca-certificates     librdkafka     netcat-openbsd     file
+#13 0.287 fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/main/x86_64/APKINDEX.tar.gz
+#13 0.736 fetch https://dl-cdn.alpinelinux.org/alpine/v3.20/community/x86_64/APKINDEX.tar.gz
+#13 1.172 (1/13) Installing ca-certificates (20250911-r0)
+#13 1.221 (2/13) Installing libmagic (5.45-r1)
+#13 1.271 (3/13) Installing file (5.45-r1)
+#13 1.305 (4/13) Installing libgcc (13.2.1_git20240309-r1)
+#13 1.339 (5/13) Installing lz4-libs (1.9.4-r5)
+#13 1.382 (6/13) Installing gdbm (1.23-r1)
+#13 1.414 (7/13) Installing libsasl (2.1.28-r6)
+#13 1.449 (8/13) Installing libstdc++ (13.2.1_git20240309-r1)
+#13 1.498 (9/13) Installing zstd-libs (1.5.6-r0)
+#13 1.537 (10/13) Installing librdkafka (2.4.0-r0)
+#13 1.590 (11/13) Installing libmd (1.1.0-r0)
+#13 1.623 (12/13) Installing libbsd (0.12.2-r0)
+#13 1.655 (13/13) Installing netcat-openbsd (1.226-r0)
+#13 1.688 Executing busybox-1.36.1-r31.trigger
+#13 1.693 Executing ca-certificates-20250911-r0.trigger
+#13 1.721 OK: 23 MiB in 27 packages
+#13 DONE 1.9s
+
+#12 [builder 3/9] RUN apk add --no-cache     git     build-base     pkgconfig     librdkafka-dev     openssl-dev     zlib-dev     zstd-dev     lz4-dev
+#12 1.838 (15/58) Installing isl26 (0.26-r1)
+#12 1.882 (16/58) Installing mpfr4 (4.2.2-r0)
+#12 1.920 (17/58) Installing mpc1 (1.3.1-r1)
+#12 1.953 (18/58) Installing gcc (15.2.0-r2)
+#12 3.165 (19/58) Installing libstdc++-dev (15.2.0-r2)
+#12 3.297 (20/58) Installing musl-dev (1.2.5-r23)
+#12 3.412 (21/58) Installing g++ (15.2.0-r2)
+#12 3.826 (22/58) Installing make (4.4.1-r3)
+#12 3.862 (23/58) Installing fortify-headers (1.1-r5)
+#12 3.895 (24/58) Installing patch (2.8-r0)
+#12 3.929 (25/58) Installing build-base (0.5-r3)
+#12 3.929 (26/58) Installing brotli-libs (1.2.0-r0)
+#12 3.969 (27/58) Installing c-ares (1.34.6-r0)
+#12 4.004 (28/58) Installing libunistring (1.4.1-r0)
+#12 4.050 (29/58) Installing libidn2 (2.3.8-r0)
+#12 4.085 (30/58) Installing nghttp2-libs (1.68.0-r0)
+#12 4.118 (31/58) Installing nghttp3 (1.13.1-r0)
+#12 4.153 (32/58) Installing libpsl (0.21.5-r3)
+#12 4.188 (33/58) Installing libcurl (8.17.0-r1)
+#12 4.227 (34/58) Installing libexpat (2.7.5-r0)
+#12 4.260 (35/58) Installing pcre2 (10.47-r0)
+#12 4.299 (36/58) Installing git (2.52.0-r0)
+#12 4.404 (37/58) Installing git-init-template (2.52.0-r0)
+#12 4.437 (38/58) Installing lz4-libs (1.10.0-r0)
+#12 4.471 (39/58) Installing gdbm (1.26-r0)
+#12 4.504 (40/58) Installing libsasl (2.1.28-r9)
+#12 4.540 (41/58) Installing librdkafka (2.12.1-r0)
+#12 4.591 (42/58) Installing pkgconf (2.5.1-r0)
+#12 4.624 (43/58) Installing openssl-dev (3.5.6-r0)
+#12 4.669 (44/58) Installing brotli (1.2.0-r0)
+#12 4.702 (45/58) Installing brotli-dev (1.2.0-r0)
+#12 4.735 (46/58) Installing c-ares-dev (1.34.6-r0)
+#12 4.785 (47/58) Installing libidn2-dev (2.3.8-r0)
+#12 4.817 (48/58) Installing libpsl-utils (0.21.5-r3)
+#12 4.851 (49/58) Installing libpsl-dev (0.21.5-r3)
+#12 4.883 (50/58) Installing nghttp2-dev (1.68.0-r0)
+#12 4.917 (51/58) Installing nghttp3-dev (1.13.1-r0)
+#12 4.951 (52/58) Installing zlib-dev (1.3.2-r0)
+#12 4.984 (53/58) Installing zstd (1.5.7-r2)
+#12 5.054 (54/58) Installing zstd-dev (1.5.7-r2)
+#12 5.088 (55/58) Installing curl-dev (8.17.0-r1)
+#12 5.123 (56/58) Installing lz4-dev (1.10.0-r0)
+#12 5.157 (57/58) Installing cyrus-sasl-dev (2.1.28-r9)
+#12 5.190 (58/58) Installing librdkafka-dev (2.12.1-r0)
+#12 5.227 Executing busybox-1.37.0-r30.trigger
+#12 5.235 Executing ca-certificates-20251003-r0.trigger
+#12 5.282 OK: 296.7 MiB in 71 packages
+#12 DONE 5.4s
+
+#14 [builder 4/9] COPY go.mod go.sum ./
+#14 DONE 0.0s
+
+#15 [builder 5/9] RUN go mod download
+#15 DONE 6.1s
+
+#16 [builder 6/9] COPY . .
+#16 DONE 0.2s
+
+#17 [builder 7/9] RUN CGO_ENABLED=1 GOOS=linux go build     -tags musl     -ldflags="-w -s"     -v     -o /app/api ./cmd/api_service     && echo "Build succeeded"     && ls -la /app/api     && file /app/api
+#17 0.452 internal/goarch
+#17 0.452 internal/unsafeheader
+#17 0.452 internal/byteorder
+#17 0.452 internal/coverage/rtcov
+#17 0.452 internal/godebugs
+#17 0.453 internal/goos
+#17 0.453 internal/msan
+#17 0.453 internal/asan
+#17 0.453 internal/goexperiment
+#17 0.453 internal/itoa
+#17 0.453 unicode/utf8
+#17 0.453 internal/trace/tracev2
+#17 0.453 cmp
+#17 0.453 log/internal
+#17 0.454 container/list
+#17 0.454 crypto/internal/fips140/alias
+#17 0.455 internal/profilerecord
+#17 0.456 unicode/utf16
+#17 0.456 vendor/golang.org/x/crypto/cryptobyte/asn1
+#17 0.457 unicode
+#17 0.457 math/bits
+#17 0.469 vendor/golang.org/x/crypto/internal/alias
+#17 0.469 internal/nettrace
+#17 0.478 internal/runtime/math
+#17 0.478 internal/runtime/gc
+#17 0.479 encoding
+#17 0.479 github.com/gin-gonic/gin/internal/bytesconv
+#17 0.479 github.com/go-playground/locales/currency
+#17 0.480 github.com/leodido/go-urn/scim/schema
+#17 0.480 github.com/pelletier/go-toml/v2/internal/characters
+#17 0.480 crypto/internal/fips140deps/byteorder
+#17 0.482 go.mongodb.org/mongo-driver/v2/internal/bsoncoreutil
+#17 0.482 google.golang.org/protobuf/internal/flags
+#17 0.483 golang.org/x/crypto/internal/alias
+#17 0.484 github.com/quic-go/quic-go/internal/utils/ringbuffer
+#17 0.485 sync/atomic
+#17 0.485 golang.org/x/net/internal/iana
+#17 0.485 crypto/internal/boring/sig
+#17 0.486 internal/cpu
+#17 0.489 log/slog/internal
+#17 0.490 simple-semo-eos/internal/models
+#17 0.490 internal/runtime/atomic
+#17 0.490 internal/runtime/strconv
+#17 0.491 internal/runtime/sys
+#17 0.491 github.com/confluentinc/confluent-kafka-go/kafka/librdkafka_vendor
+#17 0.491 internal/abi
+#17 0.491 github.com/jackc/puddle/v2/internal/genstack
+#17 0.491 internal/runtime/syscall
+#17 0.492 github.com/jackc/pgx/v5/internal/pgio
+#17 0.494 crypto/internal/fips140/subtle
+#17 0.514 internal/chacha8rand
+#17 0.514 internal/bytealg
+#17 0.514 crypto/internal/fips140deps/cpu
+#17 0.514 math
+#17 0.521 internal/runtime/exithook
+#17 0.542 internal/stringslite
+#17 0.542 internal/runtime/cgroup
+#17 0.572 internal/synctest
+#17 0.572 internal/race
+#17 0.578 internal/sync
+#17 0.578 internal/runtime/maps
+#17 0.656 runtime
+#17 1.634 iter
+#17 1.634 crypto/subtle
+#17 1.634 sync
+#17 1.634 weak
+#17 1.635 internal/reflectlite
+#17 1.642 slices
+#17 1.642 maps
+#17 1.683 errors
+#17 1.683 sort
+#17 1.689 internal/bisect
+#17 1.689 internal/testlog
+#17 1.689 crypto/internal/fips140cache
+#17 1.689 internal/singleflight
+#17 1.689 unique
+#17 1.689 github.com/quic-go/quic-go/internal/utils/linkedlist
+#17 1.689 google.golang.org/protobuf/internal/pragma
+#17 1.689 log/slog/internal/buffer
+#17 1.689 github.com/jackc/pgx/v5/internal/iobufpool
+#17 1.700 internal/oserror
+#17 1.700 path
+#17 1.700 math/rand/v2
+#17 1.700 io
+#17 1.700 vendor/golang.org/x/net/dns/dnsmessage
+#17 1.704 strconv
+#17 1.714 syscall
+#17 1.725 internal/godebug
+#17 1.728 runtime/cgo
+#17 1.737 hash
+#17 1.737 internal/saferio
+#17 1.737 crypto/internal/randutil
+#17 1.737 strings
+#17 1.738 github.com/jackc/pgx/v5/pgconn/internal/bgreader
+#17 1.738 bytes
+#17 1.747 hash/crc32
+#17 1.747 hash/adler32
+#17 1.747 hash/fnv
+#17 1.811 crypto
+#17 1.811 crypto/internal/fips140deps/godebug
+#17 1.812 golang.org/x/text/internal/tag
+#17 1.812 github.com/gabriel-vasile/mimetype/internal/json
+#17 1.812 vendor/golang.org/x/text/transform
+#17 1.812 encoding/base64
+#17 1.812 net/netip
+#17 1.812 encoding/base32
+#17 1.812 math/rand
+#17 1.813 reflect
+#17 1.838 golang.org/x/text/transform
+#17 1.838 go.mongodb.org/mongo-driver/v2/internal/decimal128
+#17 1.838 bufio
+#17 1.849 crypto/internal/fips140
+#17 1.849 crypto/internal/impl
+#17 1.849 net/http/internal/ascii
+#17 1.849 encoding/pem
+#17 1.850 regexp/syntax
+#17 1.851 html
+#17 1.865 crypto/internal/fips140/sha3
+#17 1.865 crypto/internal/fips140/sha512
+#17 1.867 crypto/internal/fips140/sha256
+#17 1.871 golang.org/x/text/runes
+#17 1.872 golang.org/x/text/width
+#17 1.907 crypto/internal/fips140/hmac
+#17 1.907 crypto/sha3
+#17 1.923 crypto/internal/fips140hash
+#17 1.924 crypto/internal/fips140/check
+#17 1.926 internal/syscall/execenv
+#17 1.926 internal/syscall/unix
+#17 1.928 time
+#17 1.939 crypto/internal/fips140/hkdf
+#17 1.940 crypto/internal/fips140/tls12
+#17 1.940 crypto/internal/fips140/pbkdf2
+#17 1.940 crypto/internal/fips140/edwards25519/field
+#17 1.940 crypto/internal/fips140/bigmod
+#17 1.941 crypto/fips140
+#17 1.941 crypto/internal/fips140/aes
+#17 1.943 crypto/internal/fips140/nistec/fiat
+#17 1.953 crypto/tls/internal/fips140tls
+#17 1.957 crypto/internal/fips140/tls13
+#17 1.968 regexp
+#17 1.978 crypto/internal/fips140/edwards25519
+#17 2.093 github.com/go-playground/locales
+#17 2.093 github.com/quic-go/quic-go/internal/monotime
+#17 2.093 golang.org/x/net/internal/httpsfv
+#17 2.093 io/fs
+#17 2.093 context
+#17 2.094 internal/poll
+#17 2.096 crypto/internal/fips140/nistec
+#17 2.132 github.com/jackc/pgx/v5/pgconn/ctxwatch
+#17 2.132 golang.org/x/sync/semaphore
+#17 2.138 internal/filepathlite
+#17 2.143 github.com/jackc/puddle/v2
+#17 2.181 os
+#17 2.184 internal/fmtsort
+#17 2.184 encoding/binary
+#17 2.264 github.com/gabriel-vasile/mimetype/internal/scan
+#17 2.264 go.mongodb.org/mongo-driver/v2/internal/binaryutil
+#17 2.264 vendor/golang.org/x/crypto/internal/poly1305
+#17 2.264 golang.org/x/crypto/internal/poly1305
+#17 2.265 golang.org/x/sys/unix
+#17 2.282 github.com/gabriel-vasile/mimetype/internal/markup
+#17 2.282 github.com/gabriel-vasile/mimetype/internal/csv
+#17 2.294 github.com/gabriel-vasile/mimetype/internal/charset
+#17 2.366 crypto/internal/sysrand
+#17 2.366 path/filepath
+#17 2.366 vendor/golang.org/x/sys/cpu
+#17 2.366 internal/sysinfo
+#17 2.366 github.com/jackc/pgpassfile
+#17 2.366 google.golang.org/protobuf/internal/detrand
+#17 2.366 golang.org/x/sys/cpu
+#17 2.366 simple-semo-eos/internal/config
+#17 2.366 os/signal
+#17 2.367 fmt
+#17 2.382 crypto/internal/entropy
+#17 2.390 crypto/internal/fips140/drbg
+#17 2.394 net
+#17 2.399 golang.org/x/crypto/sha3
+#17 2.409 crypto/internal/fips140only
+#17 2.409 crypto/internal/fips140/ecdh
+#17 2.409 crypto/internal/fips140/ecdsa
+#17 2.409 crypto/internal/fips140/ed25519
+#17 2.409 crypto/internal/fips140/rsa
+#17 2.409 crypto/internal/fips140/aes/gcm
+#17 2.409 crypto/internal/fips140/mlkem
+#17 2.420 crypto/hkdf
+#17 2.420 crypto/rc4
+#17 2.420 crypto/md5
+#17 2.420 crypto/pbkdf2
+#17 2.449 crypto/cipher
+#17 2.487 crypto/internal/boring
+#17 2.487 crypto/des
+#17 2.487 vendor/golang.org/x/crypto/chacha20
+#17 2.487 golang.org/x/crypto/chacha20
+#17 2.490 log
+#17 2.490 encoding/hex
+#17 2.491 mime/quotedprintable
+#17 2.491 net/http/internal
+#17 2.491 mime
+#17 2.491 vendor/golang.org/x/net/http2/hpack
+#17 2.492 github.com/goccy/go-yaml/token
+#17 2.492 flag
+#17 2.492 net/url
+#17 2.492 encoding/json
+#17 2.493 golang.org/x/text/internal/language
+#17 2.493 github.com/pelletier/go-toml/v2/internal/danger
+#17 2.493 vendor/golang.org/x/text/unicode/norm
+#17 2.493 compress/flate
+#17 2.494 encoding/gob
+#17 2.503 encoding/xml
+#17 2.506 math/big
+#17 2.506 crypto/aes
+#17 2.511 debug/dwarf
+#17 2.524 crypto/ecdh
+#17 2.525 crypto/hmac
+#17 2.525 crypto/sha512
+#17 2.525 crypto/sha1
+#17 2.527 crypto/sha256
+#17 2.537 vendor/golang.org/x/crypto/chacha20poly1305
+#17 2.538 go/token
+#17 2.542 github.com/pelletier/go-toml/v2/unstable
+#17 2.548 runtime/debug
+#17 2.549 text/template/parse
+#17 2.554 go.mongodb.org/mongo-driver/v2/x/bsonx/bsoncore
+#17 2.565 github.com/goccy/go-yaml/ast
+#17 2.607 vendor/golang.org/x/text/unicode/bidi
+#17 2.610 github.com/goccy/go-yaml/scanner
+#17 2.612 google.golang.org/protobuf/internal/errors
+#17 2.618 golang.org/x/net/http2/hpack
+#17 2.620 github.com/quic-go/quic-go/quicvarint
+#17 2.635 github.com/quic-go/quic-go/qlogwriter/jsontext
+#17 2.643 golang.org/x/crypto/chacha20poly1305
+#17 2.649 golang.org/x/crypto/hkdf
+#17 2.657 google.golang.org/protobuf/encoding/protowire
+#17 2.664 github.com/pelletier/go-toml/v2/internal/tracker
+#17 2.666 golang.org/x/net/bpf
+#17 2.666 golang.org/x/text/unicode/bidi
+#17 2.670 golang.org/x/text/unicode/norm
+#17 2.676 runtime/trace
+#17 2.676 compress/gzip
+#17 2.691 compress/zlib
+#17 2.708 google.golang.org/protobuf/reflect/protoreflect
+#17 2.736 github.com/quic-go/qpack
+#17 2.736 simple-semo-eos/external
+#17 2.743 database/sql/driver
+#17 2.752 github.com/jackc/pgx/v5/internal/sanitize
+#17 2.754 github.com/jackc/pgservicefile
+#17 2.771 github.com/mattn/go-isatty
+#17 2.775 golang.org/x/text/internal/language/compact
+#17 2.787 testing
+#17 2.793 os/user
+#17 2.813 golang.org/x/text/secure/bidirule
+#17 2.825 text/template
+#17 2.839 vendor/golang.org/x/text/secure/bidirule
+#17 2.851 golang.org/x/text/language
+#17 2.854 database/sql
+#17 2.862 github.com/goccy/go-yaml/lexer
+#17 2.885 vendor/golang.org/x/net/idna
+#17 2.921 debug/macho
+#17 2.933 github.com/goccy/go-yaml/printer
+#17 2.934 github.com/goccy/go-yaml/internal/format
+#17 2.996 github.com/goccy/go-yaml/internal/errors
+#17 3.002 github.com/gin-gonic/gin/codec/json
+#17 3.002 github.com/leodido/go-urn
+#17 3.002 github.com/go-playground/universal-translator
+#17 3.002 github.com/pelletier/go-toml/v2
+#17 3.010 log/slog
+#17 3.012 github.com/jackc/pgx/v5/pgproto3
+#17 3.012 google.golang.org/protobuf/internal/order
+#17 3.013 google.golang.org/protobuf/internal/genid
+#17 3.013 google.golang.org/protobuf/runtime/protoiface
+#17 3.014 google.golang.org/protobuf/internal/encoding/messageset
+#17 3.017 google.golang.org/protobuf/internal/strs
+#17 3.021 golang.org/x/text/internal
+#17 3.031 golang.org/x/net/idna
+#17 3.041 golang.org/x/text/cases
+#17 3.045 github.com/goccy/go-yaml/parser
+#17 3.059 google.golang.org/protobuf/reflect/protoregistry
+#17 3.063 crypto/rand
+#17 3.063 crypto/elliptic
+#17 3.063 crypto/internal/boring/bbig
+#17 3.065 crypto/dsa
+#17 3.065 encoding/asn1
+#17 3.066 github.com/gabriel-vasile/mimetype/internal/magic
+#17 3.093 crypto/internal/hpke
+#17 3.094 crypto/rsa
+#17 3.094 crypto/ed25519
+#17 3.096 go.mongodb.org/mongo-driver/v2/bson
+#17 3.160 google.golang.org/protobuf/proto
+#17 3.172 html/template
+#17 3.216 golang.org/x/text/secure/precis
+#17 3.249 github.com/gabriel-vasile/mimetype
+#17 3.254 crypto/x509/pkix
+#17 3.254 vendor/golang.org/x/crypto/cryptobyte
+#17 3.262 github.com/goccy/go-yaml
+#17 3.275 github.com/confluentinc/confluent-kafka-go/kafka
+#17 3.327 crypto/ecdsa
+#17 3.706 vendor/golang.org/x/net/http/httpproxy
+#17 3.706 golang.org/x/net/internal/socket
+#17 3.706 github.com/jackc/pgx/v5/pgtype
+#17 3.707 net/textproto
+#17 3.709 crypto/x509
+#17 3.748 vendor/golang.org/x/net/http/httpguts
+#17 3.748 mime/multipart
+#17 3.749 golang.org/x/net/http/httpguts
+#17 3.749 net/mail
+#17 3.778 golang.org/x/net/ipv6
+#17 3.779 golang.org/x/net/ipv4
+#17 3.789 github.com/go-playground/validator/v10
+#17 3.936 crypto/tls
+#17 4.411 net/http/httptrace
+#17 4.412 github.com/quic-go/quic-go/internal/protocol
+#17 4.433 golang.org/x/net/internal/httpcommon
+#17 4.434 net/http/internal/httpcommon
+#17 4.440 github.com/quic-go/quic-go/internal/qerr
+#17 4.440 github.com/quic-go/quic-go/qlogwriter
+#17 4.440 github.com/quic-go/quic-go/internal/utils
+#17 5.011 github.com/quic-go/quic-go/internal/flowcontrol
+#17 5.012 github.com/quic-go/quic-go/internal/wire
+#17 5.014 net/http
+#17 5.109 github.com/quic-go/quic-go/qlog
+#17 5.203 github.com/quic-go/quic-go/internal/congestion
+#17 5.203 github.com/quic-go/quic-go/internal/handshake
+#17 5.235 github.com/quic-go/quic-go/internal/ackhandler
+#17 5.323 github.com/quic-go/quic-go
+#17 5.813 github.com/gin-contrib/sse
+#17 5.813 net/rpc
+#17 5.813 github.com/gin-gonic/gin/internal/fs
+#17 5.813 golang.org/x/net/http2
+#17 5.814 net/http/httputil
+#17 5.819 github.com/quic-go/quic-go/http3/qlog
+#17 5.827 github.com/jackc/pgx/v5/pgconn
+#17 5.846 github.com/quic-go/quic-go/http3
+#17 5.924 github.com/ugorji/go/codec
+#17 6.007 github.com/jackc/pgx/v5/internal/stmtcache
+#17 6.020 github.com/jackc/pgx/v5
+#17 6.200 github.com/jackc/pgx/v5/pgxpool
+#17 6.222 golang.org/x/net/http2/h2c
+#17 6.287 simple-semo-eos/internal/db
+#17 9.287 simple-semo-eos/internal/kafka
+#17 9.303 simple-semo-eos/internal/consumer
+#17 11.00 github.com/gin-gonic/gin/render
+#17 11.00 github.com/gin-gonic/gin/binding
+#17 11.08 github.com/gin-gonic/gin
+#17 11.25 simple-semo-eos/internal/api
+#17 11.28 simple-semo-eos/cmd/api_service
+#17 11.38 Build succeeded
+#17 11.38 -rw-r--r--    1 root     root        592546 Apr 11 11:02 /app/api
+#17 11.38 /app/api: current ar archive
+#17 DONE 11.4s
+
+#18 [builder 8/9] RUN file /app/api | grep -q "ELF" || (echo "ERROR: /app/api is not a valid ELF binary" && exit 1)
+#18 0.209 ERROR: /app/api is not a valid ELF binary
+#18 ERROR: process "/bin/sh -c file /app/api | grep -q \"ELF\" || (echo \"ERROR: /app/api is not a valid ELF binary\" && exit 1)" did not complete successfully: exit code: 1
+------
+ > [builder 8/9] RUN file /app/api | grep -q "ELF" || (echo "ERROR: /app/api is not a valid ELF binary" && exit 1):
+0.209 ERROR: /app/api is not a valid ELF binary
+------
+api.Dockerfile:31
+
+--------------------
+
+  29 |     
+
+  30 |     # Verify the binary is a real ELF executable — fails the build if it's not
+
+  31 | >>> RUN file /app/api | grep -q "ELF" || (echo "ERROR: /app/api is not a valid ELF binary" && exit 1)
+
+  32 |     RUN chmod +x /app/api
+
+  33 |     
+
+--------------------
+
+failed to solve: process "/bin/sh -c file /app/api | grep -q \"ELF\" || (echo \"ERROR: /app/api is not a valid ELF binary\" && exit 1)" did not complete successfully: exit code: 1
+
