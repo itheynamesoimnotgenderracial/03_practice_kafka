@@ -1,0 +1,89 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: chat-raw
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: chat-kafka
+spec:
+  topicName: chat.raw
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: 604800000
+    min.insync.replicas: "2"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: chat-validated
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: chat-kafka
+spec:
+  topicName: chat.validated
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: 604800000
+    min.insync.replicas: "2"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: chat-timeline
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: chat-kafka
+spec:
+  topicName: chat.timeline
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: 604800000
+    min.insync.replicas: "2"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: chat-leaderboard
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: chat-kafka
+spec:
+  topicName: chat.leaderboard
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: 3600000
+    min.insync.replicas: "2"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: chat-raw-dlt
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: chat-kafka
+spec:
+  topicName: chat.raw.dlt
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: 2592000000
+    min.insync.replicas: "2"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: chat-raw-retry
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: chat-kafka
+spec:
+  topicName: chat.raw.retry
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: 86400000
+    min.insync.replicas: "2"

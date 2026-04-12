@@ -1,0 +1,7 @@
+# .dockerignore — place this in the same directory as your Dockerfile's build context
+cmd/api_service/api
+api
+*.exe
+*.out
+bin/
+dist/

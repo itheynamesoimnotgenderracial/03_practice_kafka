@@ -2,7 +2,7 @@ import { getStoredAuth, getAuthToken } from "./auth";
 
 export function getUserId(): string {
     if(typeof window == "undefined") return "user-anon"
-    return getStoredAuth()?.username ?? "user-anon"
+    return getStoredAuth()?.user_id ?? "user-anon"
 }
 
 export function getUsername(): string {
