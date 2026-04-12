@@ -31,14 +31,14 @@ type subjectMeta struct {
 // (magic byte + 4-byte schema ID prefix). Schemas must be pre-registered via
 // Register before any Serialize or Deserialize calls are made.
 type AvroCodec struct {
-	registry *schemaregistry.Client
+	registry schemaregistry.Registry
 	mu       sync.RWMutex
 	bySubj   map[string]*subjectMeta // subject -> meta
 	byID     map[int]goavro.Schema   // schemaID -> parsed schema (for deserialize)
 }
 
 // NewAvroCodec creates an AvroCodec backed by the given Schema Registry client.
-func NewAvroCodec(registry *schemaregistry.Client) *AvroCodec {
+func NewAvroCodec(registry schemaregistry.Registry) *AvroCodec {
 	return &AvroCodec{
 		registry: registry,
 		bySubj:   make(map[string]*subjectMeta),

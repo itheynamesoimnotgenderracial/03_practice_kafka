@@ -119,7 +119,7 @@ func (s *PostgresStore) CreateOutboxRecord(ctx context.Context, id, key, payload
 func (s *PostgresStore) MarkOutboxFailed(ctx context.Context, key, step, reason string) error {
 	_, err := s.pool.Exec(ctx, `
 		UPDATE outbox SET status='FAILED', failed_at_step=$1, failure_reason=$2,
-		retry_count=retry_count+1, upload_at=NOW()
+		retry_count=retry_count+1, updated_at=NOW()
 		WHERE idempotency_key=$3
 	`, step, reason, key)
 	return err

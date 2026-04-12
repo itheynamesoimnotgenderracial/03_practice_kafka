@@ -26,10 +26,21 @@ docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic simple.eo
 docker exec -it kafka1 /opt/kafka/bin/kafka-topics.sh --create --topic simple.eos.dlq --partitions 6 --replication-factor 3 --config min.insync.replicas=2 --bootstrap-server kafka1:29092
 ```
 
-### Run a single integration test
+### Run unit tests (no external services needed)
 ```bash
-go test ./tests/integration/ -v -count=1 -run TestConsumerCrashAndRebalance -timeout 5m
+go test ./internal/... -v -count=1
 ```
+
+### Run integration tests (requires Docker stack to be up)
+```bash
+INTEGRATION=1 \
+KAFKA_BROKERS=localhost:9092 \
+POSTGRES_DSN="postgres://postgres:postgres@localhost:5432/customerdb?sslmode=disable" \
+SCHEMA_REGISTRY_URL=http://localhost:8081 \
+go test ./tests/integration/ -v -count=1 -timeout 5m
+```
+
+Integration tests are skipped automatically when `INTEGRATION=1` is not set, so `go test ./...` is always safe to run without the Docker stack. Each run creates uniquely named Kafka topics (e.g. `test.validator.<runID>`) to avoid cross-run pollution, and truncates the `outbox` and `customers` tables at the start of each test.
 
 ## Architecture
 
@@ -72,6 +83,33 @@ Idempotency key format: `{message_id}::{customer_id}::{action}` (built in `inter
 - `kafka.Producer` / `kafka.Consumer` (`internal/kafka/kafka.go`) — thin wrappers around confluent-kafka-go; inject mocks in tests.
 - `db.Store` (`internal/db/db.go`) — all DB access goes through this interface; `PostgresStore` is the real implementation; migrate runs inline on startup. Key methods: `GetOutboxRecord`, `CreateOutboxRecord`, `UpdateOutboxStatus`, `MarkOutboxFailed`, `IncrementRetryCount`, `SaveCustomerAndCompleteOutbox`.
 - `external.CallerFunc` (`external/api.go`) — function type for the third-party API; simulates 30% failure rate in the default implementation.
+- `schemaregistry.Registry` (`internal/schemaregistry/mock.go`) — interface extracted from `Client`; `AvroCodec` depends on this interface so `MockRegistry` can be injected in tests.
+- `serde.Codec` (`internal/serde/codec.go`) — `AvroCodec` (real, Confluent wire format) and `JSONCodec` (test double, no Schema Registry needed); `MockCodec` wraps `JSONCodec` with injectable `ForceSerializeError` / `ForceDeserializeError`.
+
+### Test doubles
+
+| Package | Mock | What it replaces |
+|---|---|---|
+| `internal/kafka` | `MockProducer`, `MockConsumer` | Real Kafka broker |
+| `internal/db` | `MockStore` | Real Postgres |
+| `internal/serde` | `JSONCodec` (simple), `MockCodec` (with error injection) | Real Avro + Schema Registry |
+| `internal/schemaregistry` | `MockRegistry` | Real Schema Registry HTTP calls |
+
+### Test layout
+
+```
+internal/
+  api/handler_test.go          unit — HTTP handler (MockProducer + MockCodec)
+  consumer/consumer_test.go    unit — processWithIdempotency (MockStore + MockProducer + JSONCodec)
+  consumer/export_test.go      exports private functions for the consumer_test package
+  db/db_test.go                unit — MockStore contract tests (no Postgres)
+tests/
+  integration/
+    helpers_test.go            TestMain, shared infra setup, poll/truncate helpers
+    postgres_test.go           PostgresStore against real Postgres
+    kafka_test.go              ConfluentProducer/Consumer + AvroCodec against real Kafka + Schema Registry
+    e2e_test.go                full pipeline: POST → validator → customer consumer → Postgres
+```
 
 ### Infrastructure (deploy/docker-compose.yml)
 
