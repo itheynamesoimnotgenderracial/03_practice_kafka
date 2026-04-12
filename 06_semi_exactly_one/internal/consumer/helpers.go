@@ -26,11 +26,11 @@ func BuildIdempotencyKey(msg models.CustomerMessage) string {
 // RetryCount is int64 to match the Avro schema's "long" type (Go int is 64-bit
 // but hamba/avro requires int64 for Avro long, not the untyped int kind).
 type dlqAvro struct {
-	OriginalPayload models.CustomerMessage `avro:"original_payload"`
-	FailedAtStep    string                 `avro:"failed_at_step"`
-	Reason          string                 `avro:"reason"`
-	IdempotencyKey  string                 `avro:"idempotency_key"`
-	RetryCount      int64                  `avro:"retry_count"`
+	OriginalPayload models.CustomerMessage `avro:"original_payload" json:"original_payload"`
+	FailedAtStep    string                 `avro:"failed_at_step"   json:"failed_at_step"`
+	Reason          string                 `avro:"reason"           json:"reason"`
+	IdempotencyKey  string                 `avro:"idempotency_key"  json:"idempotency_key"`
+	RetryCount      int64                  `avro:"retry_count"      json:"retry_count"`
 }
 
 func sendToDLQ(ctx context.Context, producer kafka.Producer, codec serde.Codec, dlqTopic string, dlq models.DLQMessage) {
@@ -51,5 +51,5 @@ func sendToDLQ(ctx context.Context, producer kafka.Producer, codec serde.Codec, 
 		log.Printf("[DLQ] x publish failed: %v", err)
 		return
 	}
-	log.Printf("[DLQ] -> step=%-15s reason=%s", dlq.FailedAtStep, dlq.Reason)
+	log.Printf("[DLQ] -> step=%s-15s reason=%s", dlq.FailedAtStep, dlq.Reason)
 }
